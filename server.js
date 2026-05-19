@@ -1139,7 +1139,7 @@ autoArchiveContests();
 setInterval(autoArchiveContests, 60 * 60 * 1000); // stündlich prüfen
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`\n✈  Modellflug-Wettbewerb-Server\n`);
+  console.log(`\n✈  AeroScore – Wettbewerb-Server\n`);
   console.log(`   http://localhost:${PORT}\n`);
   if (isFirstSetup()) {
     console.log(`   ⚠️  Ersteinrichtung erforderlich → http://localhost:${PORT}/setup\n`);

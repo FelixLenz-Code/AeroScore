@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="public/AeroScore-Logo-Gross.png" alt="AeroScore Logo" width="160">
+</p>
+
 # AeroScore
 
 **Wettbewerbssoftware für Modellflugvereine** — Teilnehmer verwalten, Wertungen eintragen, Ergebnisse live auf dem Beamer präsentieren.
