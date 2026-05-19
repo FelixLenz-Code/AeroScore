@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Einrichtung — AeroScore</title>
+<link rel="icon" href="/app-icon">
+<link rel="stylesheet" href="/fonts/fonts.css">
+<style>
+  :root{--accent:#4da6ff;--gold:#ffd166;--bg:#05121e;--card:#0a1e35;--border:rgba(77,166,255,0.2);--text:#e8f4ff;--muted:#6b9ab8;--radius:12px;--green:#06d6a0;--red:#ff6b6b;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
+  .box{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:36px 32px;width:100%;max-width:500px;}
+  h1{font-size:24px;font-weight:900;margin-bottom:6px;color:var(--accent);}
+  .sub{font-size:14px;color:var(--muted);margin-bottom:28px;}
+  .section{margin-bottom:24px;padding-bottom:24px;border-bottom:1px solid var(--border);}
+  .section:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0;}
+  h2{font-size:16px;font-weight:700;margin-bottom:12px;}
+  label{display:block;font-size:13px;color:var(--muted);margin-bottom:4px;}
+  input,textarea{width:100%;background:rgba(77,166,255,0.05);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-size:14px;outline:none;margin-bottom:10px;}
+  input:focus,textarea:focus{border-color:var(--accent);}
+  .btn{width:100%;padding:12px;border-radius:8px;border:none;cursor:pointer;font-size:15px;font-weight:700;margin-top:4px;}
+  .btn-primary{background:var(--accent);color:#000;}
+  .btn-ghost{background:rgba(77,166,255,0.1);color:var(--accent);border:1px solid var(--border);}
+  .drop-zone{border:2px dashed var(--border);border-radius:var(--radius);padding:32px;text-align:center;cursor:pointer;transition:all 0.2s;margin-bottom:12px;}
+  .drop-zone:hover,.drop-zone.drag{border-color:var(--accent);background:rgba(77,166,255,0.05);}
+  .drop-zone .icon{font-size:36px;margin-bottom:8px;}
+  .drop-zone p{font-size:14px;color:var(--muted);}
+  .msg{padding:10px 14px;border-radius:8px;font-size:14px;margin-top:10px;display:none;}
+  .msg.ok{background:rgba(6,214,160,0.1);border:1px solid rgba(6,214,160,0.3);color:var(--green);}
+  .msg.err{background:rgba(255,107,107,0.1);border:1px solid rgba(255,107,107,0.3);color:var(--red);}
+  .divider{display:flex;align-items:center;gap:12px;margin:20px 0;color:var(--muted);font-size:13px;}
+  .divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border);}
+  #file-name{font-size:13px;color:var(--accent);margin-bottom:8px;display:none;}
+</style>
+</head>
+<body>
+<div class="box">
+  <div style="font-size:40px;margin-bottom:12px;">✈</div>
+  <h1>AeroScore</h1>
+  <div class="sub" id="setup-sub">Willkommen! Richte die App ein oder stelle ein Backup wieder her.</div>
+
+  <div id="not-first-setup" style="display:none;">
+    <div class="msg err" style="display:block;">⚠️ Diese Seite ist nur beim Erststart zugänglich. Bitte melde dich als Admin an.</div>
+    <a href="/" style="display:block;margin-top:16px;text-align:center;color:var(--accent);">→ Zur App</a>
+  </div>
+
+  <div id="setup-content">
+    <!-- Option 1: Backup wiederherstellen -->
+    <div class="section">
+      <h2>📦 Backup wiederherstellen</h2>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">Lade eine Backup-ZIP hoch um alle Daten wiederherzustellen.</p>
+      <div class="drop-zone" id="drop-zone" onclick="document.getElementById('backup-file').click()">
+        <div class="icon">📂</div>
+        <p>Backup-ZIP hier ablegen oder klicken</p>
+      </div>
+      <input type="file" id="backup-file" accept=".zip" style="display:none" onchange="onFileSelect(this)">
+      <div id="file-name"></div>
+      <button class="btn btn-primary" id="restore-btn" onclick="doRestore()" disabled>🔄 Wiederherstellen</button>
+      <div class="msg" id="restore-msg"></div>
+    </div>
+
+    <div class="divider">oder</div>
+
+    <!-- Option 2: Manuell einrichten -->
+    <div class="section">
+      <h2>⚙️ Manuell einrichten</h2>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">Erstelle einen Admin-Account und starte neu.</p>
+      <label>Admin-Benutzername</label>
+      <input type="text" id="setup-username" value="admin" placeholder="admin">
+      <label>Admin-Passwort</label>
+      <input type="password" id="setup-password" placeholder="Sicheres Passwort wählen" oninput="checkSetupForm()">
+      <label>Passwort bestätigen</label>
+      <input type="password" id="setup-password2" placeholder="Passwort wiederholen" oninput="checkSetupForm()">
+      <div id="pw-hint" style="font-size:13px;color:var(--red);margin-bottom:8px;display:none;"></div>
+      <button class="btn btn-ghost" id="setup-btn" onclick="doSetup()" disabled>✅ Admin-Account erstellen</button>
+      <div class="msg" id="setup-msg"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+let selectedFile = null;
+
+async function init(){
+  const r = await fetch('/api/setup/status');
+  const d = await r.json();
+  if(!d.firstSetup){
+    document.getElementById('setup-content').style.display='none';
+    document.getElementById('not-first-setup').style.display='block';
+    document.getElementById('setup-sub').textContent='App ist bereits eingerichtet.';
+  }
+}
+
+// Drag & Drop
+const dz = document.getElementById('drop-zone');
+dz.addEventListener('dragover', e=>{e.preventDefault();dz.classList.add('drag');});
+dz.addEventListener('dragleave', ()=>dz.classList.remove('drag'));
+dz.addEventListener('drop', e=>{
+  e.preventDefault(); dz.classList.remove('drag');
+  const f=e.dataTransfer.files[0];
+  if(f&&f.name.endsWith('.zip')) setFile(f);
+});
+
+function onFileSelect(input){
+  if(input.files[0]) setFile(input.files[0]);
+}
+function setFile(f){
+  selectedFile=f;
+  const fn=document.getElementById('file-name');
+  fn.textContent='📦 '+f.name; fn.style.display='block';
+  document.getElementById('restore-btn').disabled=false;
+}
+
+async function doRestore(){
+  if(!selectedFile) return;
+  const btn=document.getElementById('restore-btn');
+  btn.disabled=true; btn.textContent='⏳ Wird wiederhergestellt…';
+  const fd=new FormData(); fd.append('backup',selectedFile);
+  try{
+    const r=await fetch('/api/setup/restore',{method:'POST',body:fd});
+    const d=await r.json();
+    if(d.ok){
+      showMsg('restore-msg','ok',`✓ Wiederhergestellt! ${d.info.contestCount} Wettbewerbe, ${d.info.userCount} Benutzer. Weiterleitung…`);
+      setTimeout(()=>window.location.href='/',2000);
+    } else {
+      showMsg('restore-msg','err','Fehler: '+(d.error||'Unbekannt'));
+      btn.disabled=false; btn.textContent='🔄 Wiederherstellen';
+    }
+  }catch(e){
+    showMsg('restore-msg','err','Fehler: '+e.message);
+    btn.disabled=false; btn.textContent='🔄 Wiederherstellen';
+  }
+}
+
+function checkSetupForm(){
+  const pw=document.getElementById('setup-password').value;
+  const pw2=document.getElementById('setup-password2').value;
+  const hint=document.getElementById('pw-hint');
+  let msg='';
+  if(pw.length>0&&pw.length<6) msg='Passwort zu kurz (mindestens 6 Zeichen)';
+  else if(pw2.length>0&&pw!==pw2) msg='Passwörter stimmen nicht überein';
+  hint.textContent=msg;
+  hint.style.display=msg?'block':'none';
+  document.getElementById('setup-btn').disabled=!(pw.length>=6&&pw===pw2);
+}
+
+async function doSetup(){
+  const username=document.getElementById('setup-username').value.trim()||'admin';
+  const password=document.getElementById('setup-password').value;
+  const btn=document.getElementById('setup-btn');
+  btn.disabled=true; btn.textContent='⏳ Wird erstellt…';
+  try{
+    const r=await fetch('/api/setup/init',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({username,password})
+    });
+    const d=await r.json();
+    if(d.ok){
+      showMsg('setup-msg','ok','✓ Admin-Account erstellt! Weiterleitung…');
+      setTimeout(()=>window.location.href='/',2000);
+    } else {
+      showMsg('setup-msg','err','Fehler: '+(d.error||'Unbekannt'));
+      btn.disabled=false; btn.textContent='✅ Admin-Account erstellen';
+    }
+  }catch(e){
+    showMsg('setup-msg','err','Fehler: '+e.message);
+    btn.disabled=false; btn.textContent='✅ Admin-Account erstellen';
+  }
+}
+
+function showMsg(id,type,text){
+  const el=document.getElementById(id);
+  el.className='msg '+type; el.textContent=text; el.style.display='block';
+}
+
+init();
+</script>
+<script>if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');</script>
+</body>
+</html>

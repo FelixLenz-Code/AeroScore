@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AeroScore</title>
+<link rel="icon" href="/app-icon">
+<link rel="apple-touch-icon" href="/app-icon">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#0a1628">
+<link rel="stylesheet" href="/fonts/fonts.css">
+<style>
+  :root{
+    --sky:#0a1628;--sky-mid:#0d2244;--sky-card:#0f2a52;--sky-card2:#142f5c;
+    --sky-border:rgba(100,160,255,0.12);--sky-border2:rgba(100,160,255,0.28);
+    --accent:#4da6ff;--accent-red:#ef476f;--accent3:#06d6a0;
+    --text:#e8f1ff;--text-muted:#7a9cc4;--text-dim:#4a6a8a;
+    --gold:#ffd166;--radius:10px;--radius-lg:16px;
+    --font-head:'Barlow Condensed',sans-serif;--font-body:'Barlow',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--sky);color:var(--text);font-family:var(--font-body);
+    min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:24px 20px 56px;}
+
+  /* Top bar */
+  .topbar{width:100%;max-width:540px;display:flex;justify-content:flex-end;margin-bottom:28px;gap:8px;}
+  .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:var(--radius);
+    border:1px solid var(--sky-border2);cursor:pointer;font-family:var(--font-head);font-size:14px;
+    font-weight:700;letter-spacing:0.04em;background:transparent;color:var(--text-muted);
+    transition:all 0.15s;text-decoration:none;white-space:nowrap;}
+  .btn:hover{border-color:var(--accent);color:var(--accent);}
+  .btn-primary{background:var(--accent);border-color:var(--accent);color:#0a1628 !important;}
+  .btn-primary:hover{background:#5eb4ff;border-color:#5eb4ff;}
+
+  /* Hero */
+  .hero{text-align:center;margin-bottom:36px;width:100%;max-width:540px;}
+  .hero-icon{font-size:64px;display:block;margin-bottom:12px;line-height:1;}
+  .hero h1{font-family:var(--font-head);font-size:36px;font-weight:800;letter-spacing:0.02em;margin-bottom:8px;}
+  .hero-sub{font-size:15px;color:var(--text-muted);}
+
+  /* Contest cards */
+  .card-list{width:100%;max-width:540px;}
+  .contest-card{background:var(--sky-card);border:2px solid var(--sky-border);
+    border-radius:var(--radius-lg);margin-bottom:12px;overflow:hidden;transition:border-color 0.15s;}
+  .contest-card.selected{border-color:var(--accent);}
+  .contest-row{display:flex;align-items:center;gap:14px;padding:16px 18px;cursor:pointer;
+    user-select:none;}
+  .contest-row:hover .contest-name{color:var(--accent);}
+  .contest-icon{font-size:26px;flex-shrink:0;width:34px;text-align:center;}
+  .contest-info{flex:1;min-width:0;}
+  .contest-name{font-family:var(--font-head);font-size:18px;font-weight:800;
+    transition:color 0.15s;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .contest-meta{font-size:12px;color:var(--text-muted);margin-top:3px;}
+  .status-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;vertical-align:middle;}
+  .dot-active{background:var(--accent3);}
+  .dot-done{background:var(--accent);}
+
+  /* Password section */
+  .pw-section{padding:12px 18px 16px;border-top:1px solid var(--sky-border);}
+  .pw-label{font-size:12px;color:var(--text-muted);margin-bottom:8px;
+    font-family:var(--font-head);letter-spacing:0.05em;text-transform:uppercase;}
+  .pw-row{display:flex;gap:8px;align-items:center;}
+  .pw-row input{flex:1;background:var(--sky-mid);border:1px solid var(--sky-border2);
+    border-radius:var(--radius);padding:10px 14px;color:var(--text);font-size:15px;
+    font-family:var(--font-body);outline:none;transition:border-color 0.15s;}
+  .pw-row input:focus{border-color:var(--accent);}
+  .pw-row input::placeholder{color:var(--text-dim);}
+  .btn-icon{padding:9px 11px;}
+  .pw-err{color:var(--accent-red);font-size:13px;margin-top:8px;display:none;}
+
+  /* Announcements */
+  .ann-banner{padding:12px 16px;border-radius:var(--radius);margin-bottom:10px;font-size:14px;line-height:1.5;white-space:pre-wrap;}
+  .ann-info   {background:rgba(77,166,255,0.10);border:1px solid rgba(77,166,255,0.30);}
+  .ann-warning{background:rgba(255,209,102,0.10);border:1px solid rgba(255,209,102,0.35);color:#ffd166;}
+  .ann-success{background:rgba(6,214,160,0.10);border:1px solid rgba(6,214,160,0.30);color:#06d6a0;}
+
+  /* Spinner / empty */
+  .spinner{width:36px;height:36px;border:3px solid var(--sky-border);border-top-color:var(--accent);
+    border-radius:50%;animation:spin 0.7s linear infinite;margin:48px auto;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .empty{text-align:center;color:var(--text-muted);padding:48px 0;font-size:15px;}
+
+  /* Login overlay */
+  .overlay{position:fixed;inset:0;background:rgba(5,14,28,0.92);display:flex;
+    align-items:center;justify-content:center;backdrop-filter:blur(6px);z-index:1000;}
+  .overlay.hidden{display:none;}
+  .modal{background:var(--sky-card);border:1px solid var(--sky-border2);
+    border-radius:var(--radius-lg);padding:28px 28px 24px;width:90%;max-width:360px;}
+  .modal h3{font-family:var(--font-head);font-size:20px;font-weight:800;margin-bottom:18px;}
+  .modal label{font-size:12px;color:var(--text-muted);letter-spacing:0.05em;
+    text-transform:uppercase;font-family:var(--font-head);display:block;margin-bottom:5px;}
+  .modal input{width:100%;background:var(--sky-mid);border:1px solid var(--sky-border2);
+    border-radius:var(--radius);padding:10px 14px;color:var(--text);font-size:15px;
+    margin-bottom:14px;outline:none;font-family:var(--font-body);}
+  .modal input:focus{border-color:var(--accent);}
+  .modal-err{color:var(--accent-red);font-size:13px;margin-bottom:12px;display:none;}
+  .modal-footer{display:flex;gap:8px;}
+  .modal-footer .btn{flex:1;justify-content:center;}
+
+  /* ── High Contrast ── */
+  :root[data-hc]{
+    --sky:#f8f8f8;--sky-mid:#ffffff;--sky-card:#e8e8e8;--sky-card2:#e0e0e0;
+    --sky-border:rgba(0,0,0,0.15);--sky-border2:rgba(0,0,0,0.35);
+    --accent:#0050cc;--accent-red:#cc0022;--accent3:#006644;
+    --text:#000000;--text-muted:#333333;--text-dim:#555555;--gold:#a06000;
+  }
+  :root[data-hc] body{background:#f8f8f8;}
+  :root[data-hc] .btn-primary{background:#0050cc;border-color:#003a99;color:#fff!important;}
+  :root[data-hc] .btn-primary:hover{background:#0040aa;border-color:#002f88;}
+  :root[data-hc] .overlay{background:rgba(200,200,200,0.95);}
+  :root[data-hc] .modal{background:#f0f0f0;border-color:#888;}
+  :root[data-hc] .modal input{background:#fff;border-color:#999;color:#000;}
+  :root[data-hc] .pw-row input{background:#fff;border-color:#999;color:#000;}
+  :root[data-hc] .ann-info{background:rgba(0,80,204,0.08);border-color:rgba(0,80,204,0.4);color:#0050cc;}
+  :root[data-hc] .ann-warning{background:rgba(160,96,0,0.08);border-color:rgba(160,96,0,0.4);color:#a06000;}
+  :root[data-hc] .ann-success{background:rgba(0,102,68,0.08);border-color:rgba(0,102,68,0.4);color:#006644;}
+  :root[data-hc] #welcome-msg-display{background:rgba(0,80,204,0.06)!important;border-color:rgba(0,80,204,0.25)!important;color:#000!important;}
+  :root[data-hc] #welcome-msg-input{background:#fff;border-color:#999;color:#000;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="btn" id="hc-btn" onclick="toggleHC()" title="Kontrast umschalten">☀️</button>
+  <button class="btn" onclick="showLogin()">🔑 Anmelden</button>
+</div>
+
+<div class="hero">
+  <img id="welcome-club-logo" alt="Vereinslogo" style="display:none;max-height:80px;max-width:220px;object-fit:contain;margin-bottom:8px;border-radius:8px;">
+  <span class="hero-icon" id="hero-plane-icon">✈</span>
+  <h1>AeroScore</h1>
+  <p class="hero-sub">Wähle einen Wettbewerb und klicke auf „Anzeigen"</p>
+  <div id="welcome-msg-display" style="display:none;margin-top:12px;padding:12px 20px;background:rgba(77,166,255,0.08);border:1px solid rgba(77,166,255,0.2);border-radius:10px;font-size:14px;color:var(--text);white-space:pre-wrap;word-break:break-word;overflow-wrap:break-word;text-align:center;max-width:460px;margin-left:auto;margin-right:auto;"></div>
+  <div id="welcome-msg-edit" style="display:none;margin-top:12px;width:100%;max-width:460px;margin-left:auto;margin-right:auto;">
+    <textarea id="welcome-msg-input" rows="3" maxlength="500" placeholder="Willkommensnachricht für Besucher (max. 500 Zeichen)..."
+      oninput="document.getElementById('welcome-msg-count').textContent=(500-this.value.length)+' Zeichen übrig'"
+      style="width:100%;background:var(--sky-mid);border:1px solid var(--sky-border2);border-radius:10px;padding:10px 14px;color:var(--text);font-size:13px;font-family:var(--font-body);resize:vertical;outline:none;box-sizing:border-box;"></textarea>
+    <div style="display:flex;gap:8px;margin-top:4px;justify-content:space-between;align-items:center;">
+      <span id="welcome-msg-count" style="font-size:11px;color:var(--text-muted);">500 Zeichen übrig</span>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-primary" onclick="saveWelcomeMsg()" style="padding:7px 16px;font-size:13px;">💾 Speichern</button>
+        <button class="btn" onclick="toggleEditMsg(false)" style="padding:7px 16px;font-size:13px;">Abbrechen</button>
+      </div>
+    </div>
+  </div>
+  <button id="welcome-msg-edit-btn" onclick="toggleEditMsg(true)" class="btn" style="display:none;margin-top:10px;font-size:12px;padding:6px 14px;">✎ Willkommenstext bearbeiten</button>
+</div>
+
+<div id="announcements-area" style="width:100%;max-width:540px;"></div>
+
+<div class="card-list" id="list"><div class="spinner"></div></div>
+
+<!-- Login overlay -->
+<div class="overlay hidden" id="login-overlay">
+  <div class="modal">
+    <h3>🔑 Anmelden</h3>
+    <label>Benutzername</label>
+    <input type="text" id="l-user" placeholder="admin" onkeydown="if(event.key==='Enter')doLogin()">
+    <label>Passwort</label>
+    <input type="password" id="l-pw" placeholder="••••••" onkeydown="if(event.key==='Enter')doLogin()">
+    <div class="modal-err" id="l-err"></div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="doLogin()">Anmelden</button>
+      <button class="btn" onclick="closeLogin()">Abbrechen</button>
+    </div>
+  </div>
+</div>
+
+<script>
+if(localStorage.getItem('hc')==='1') document.documentElement.setAttribute('data-hc','');
+function toggleHC(){
+  const r=document.documentElement;
+  if(r.hasAttribute('data-hc')){r.removeAttribute('data-hc');localStorage.setItem('hc','0');}
+  else{r.setAttribute('data-hc','');localStorage.setItem('hc','1');}
+}
+
+let adminSession = null;
+let currentWelcomeMsg = '';
+
+function renderAnnouncements(cfg){
+  const area = document.getElementById('announcements-area');
+  if(!area) return;
+  const active = (cfg.announcements||[]).filter(a=>a.active);
+  if(!active.length){ area.innerHTML=''; return; }
+  const icons = { info:'ℹ️', warning:'⚠️', success:'✅' };
+  area.innerHTML = active.map(a=>{
+    const type = ['info','warning','success'].includes(a.type)?a.type:'info';
+    return `<div class="ann-banner ann-${type}">${icons[type]} ${esc(a.text)}</div>`;
+  }).join('');
+}
+
+async function loadWelcomeMsg(){
+  try{
+    const r = await fetch('/api/config');
+    const d = await r.json();
+    currentWelcomeMsg = d.welcomeMessage || '';
+    const disp = document.getElementById('welcome-msg-display');
+    if(disp){
+      if(currentWelcomeMsg){
+        disp.textContent = currentWelcomeMsg;
+        disp.style.display = 'block';
+      } else {
+        disp.style.display = 'none';
+      }
+    }
+    // Club logo
+    const logoImg = document.getElementById('welcome-club-logo');
+    const planeIcon = document.getElementById('hero-plane-icon');
+    if(d.hasLogo){
+      if(logoImg){ logoImg.src = '/api/config/logo?t=' + Date.now(); logoImg.style.display = 'block'; }
+      if(planeIcon) planeIcon.style.display = 'none';
+    }
+    renderAnnouncements(d);
+  }catch{}
+  // Check if admin is logged in (from session set by main app or welcome login)
+  const saved = sessionStorage.getItem('session');
+  if(saved){
+    try{
+      const s = JSON.parse(saved);
+      const r = await fetch('/api/auth/me', {headers:{'x-session-token':s.token}});
+      const d = await r.json();
+      if(d.loggedIn && d.role==='admin'){
+        adminSession = s;
+        const btn = document.getElementById('welcome-msg-edit-btn');
+        if(btn) btn.style.display = 'inline-flex';
+      }
+    }catch{}
+  }
+}
+
+function toggleEditMsg(show){
+  document.getElementById('welcome-msg-edit').style.display = show ? 'block' : 'none';
+  document.getElementById('welcome-msg-edit-btn').style.display = show ? 'none' : 'inline-flex';
+  if(show){
+    const inp = document.getElementById('welcome-msg-input');
+    inp.value = currentWelcomeMsg;
+    inp.focus();
+    const cnt = document.getElementById('welcome-msg-count');
+    if(cnt) cnt.textContent = (500 - inp.value.length) + ' Zeichen übrig';
+  }
+}
+
+async function saveWelcomeMsg(){
+  const msg = document.getElementById('welcome-msg-input').value.trim();
+  if(!adminSession) return;
+  try{
+    const r = await fetch('/api/config', {
+      method:'PUT',
+      headers:{'Content-Type':'application/json','x-session-token':adminSession.token},
+      body: JSON.stringify({welcomeMessage: msg})
+    });
+    if(r.ok){
+      currentWelcomeMsg = msg;
+      const disp = document.getElementById('welcome-msg-display');
+      if(msg){ disp.textContent = msg; disp.style.display = 'block'; }
+      else { disp.style.display = 'none'; }
+      toggleEditMsg(false);
+    }
+  }catch{}
+}
+
+function toSlug(name){
+  return (name||'')
+    .toLowerCase()
+    .replace(/ä/g,'ae').replace(/ö/g,'oe').replace(/ü/g,'ue')
+    .replace(/ß/g,'ss').replace(/Ä/g,'ae').replace(/Ö/g,'oe').replace(/Ü/g,'ue')
+    .replace(/[^a-z0-9]+/g,'-')
+    .replace(/^-+|-+$/g,'');
+}
+function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+
+function showLogin(){
+  document.getElementById('login-overlay').classList.remove('hidden');
+  setTimeout(()=>document.getElementById('l-user').focus(),100);
+}
+function closeLogin(){document.getElementById('login-overlay').classList.add('hidden');}
+
+async function doLogin(){
+  const u=document.getElementById('l-user').value.trim();
+  const p=document.getElementById('l-pw').value;
+  const errEl=document.getElementById('l-err');
+  errEl.style.display='none';
+  try{
+    const r=await fetch('/api/auth/login',{method:'POST',
+      headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});
+    const d=await r.json();
+    if(!r.ok) throw new Error(d.error||'Fehler');
+    sessionStorage.setItem('session',JSON.stringify({
+      token:d.token,role:d.role,username:d.username,userId:d.userId}));
+    window.location.href='/#leaderboard';
+  }catch(e){errEl.textContent=e.message;errEl.style.display='block';}
+}
+
+let allContests=[];
+
+async function load(){
+  const list=document.getElementById('list');
+  try{
+    const r=await fetch('/api/contests');
+    allContests=await r.json();
+  }catch{allContests=[];}
+  const visible=allContests.filter(c=>c.status!=='archived');
+  if(!visible.length){
+    list.innerHTML='<div class="empty">🏁 Noch keine Wettbewerbe vorhanden.</div>'; return;
+  }
+  list.innerHTML=visible.map(c=>{
+    const dotCls=c.status==='finished'?'dot-done':'dot-active';
+    const dotLabel=c.status==='finished'?'Abgeschlossen':'Aktiv';
+    const meta=`<span class="status-dot ${dotCls}"></span>${dotLabel}`
+      +(c.date?` &nbsp;·&nbsp; ${esc(c.date)}`:'')
+      +(c.ownerName?` &nbsp;·&nbsp; 👤 ${esc(c.ownerName)}`:'')
+      +(c.hasViewerPassword?' &nbsp;·&nbsp; 🔐 Passwortgeschützt':'');
+    return `<div class="contest-card" id="card-${c.id}">
+      <div class="contest-row" onclick="select(${c.id})">
+        <div class="contest-icon">${c.status==='finished'?'🏆':'🛩'}</div>
+        <div class="contest-info">
+          <div class="contest-name">${esc(c.name)}</div>
+          <div class="contest-meta">${meta}</div>
+        </div>
+        <button class="btn btn-primary" onclick="event.stopPropagation();select(${c.id})"
+          style="padding:9px 18px;">Anzeigen →</button>
+      </div>
+      ${c.hasViewerPassword?`
+      <div class="pw-section" id="pws-${c.id}" style="display:none;">
+        <div class="pw-label">🔐 Passwort erforderlich</div>
+        <div class="pw-row">
+          <input type="password" id="pwinp-${c.id}" placeholder="Passwort eingeben"
+            onkeydown="if(event.key==='Enter')openC(${c.id})">
+          <button class="btn btn-icon" onclick="togglePw(${c.id})">👁</button>
+          <button class="btn btn-primary" onclick="openC(${c.id})">🔓 Öffnen</button>
+        </div>
+        <div class="pw-err" id="pwerr-${c.id}"></div>
+      </div>`:''}
+    </div>`;
+  }).join('');
+}
+
+function select(id){
+  const c=allContests.find(c=>c.id===id);
+  if(!c) return;
+  if(!c.hasViewerPassword){openC(id);return;}
+  // Toggle password section, close others
+  allContests.forEach(cc=>{
+    const p=document.getElementById('pws-'+cc.id);
+    if(p&&cc.id!==id){p.style.display='none';document.getElementById('card-'+cc.id)?.classList.remove('selected');}
+  });
+  const pws=document.getElementById('pws-'+id);
+  const card=document.getElementById('card-'+id);
+  const open=pws&&pws.style.display!=='none';
+  if(pws) pws.style.display=open?'none':'block';
+  card?.classList.toggle('selected',!open);
+  if(!open) setTimeout(()=>document.getElementById('pwinp-'+id)?.focus(),50);
+}
+
+function togglePw(id){
+  const i=document.getElementById('pwinp-'+id);
+  if(i) i.type=i.type==='password'?'text':'password';
+}
+
+async function openC(id){
+  const c=allContests.find(c=>c.id===id);
+  if(!c) return;
+  const errEl=document.getElementById('pwerr-'+id);
+  if(errEl) errEl.style.display='none';
+  if(c.hasViewerPassword){
+    const pw=document.getElementById('pwinp-'+id)?.value||'';
+    try{
+      const r=await fetch('/api/contests/'+id+'/viewer-auth',{method:'POST',
+        headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pw})});
+      const d=await r.json();
+      if(!r.ok) throw new Error(d.error||'Falsches Passwort');
+      if(d.token) sessionStorage.setItem('viewerToken_'+id,d.token);
+    }catch(e){
+      if(errEl){errEl.textContent=e.message;errEl.style.display='block';}
+      return;
+    }
+  }
+  sessionStorage.setItem('contestId',id);
+  sessionStorage.setItem('fromWelcome','1');
+  const slug=toSlug(c.name);
+  window.location.href='/#leaderboard/'+(slug||id);
+}
+
+load();
+loadWelcomeMsg();
+// SSE auto-refresh
+function startWelcomeSSE(){
+  const es=new EventSource('/api/events');
+  es.addEventListener('update', ()=>{ load(); loadWelcomeMsg(); });
+  es.onerror=()=>{
+    // Only reconnect if not already connecting (readyState 0 = CONNECTING)
+    if(es.readyState !== 0){
+      es.close();
+      setTimeout(startWelcomeSSE, 5000);
+    }
+  };
+}
+startWelcomeSSE();
+// Load footer links
+fetch('/api/config').then(r=>r.json()).then(cfg=>{
+  const footer=document.getElementById('welcome-footer');
+  const imp=document.getElementById('wf-imprint');
+  const priv=document.getElementById('wf-privacy');
+  const sep=document.getElementById('wf-sep');
+  if(cfg.imprintEnabled||cfg.privacyEnabled){ footer.style.display='block'; }
+  if(cfg.imprintEnabled&&imp) imp.innerHTML='<a href="/impressum" style="color:var(--text-muted);text-decoration:none;">Impressum</a>';
+  if(cfg.privacyEnabled&&priv) priv.innerHTML='<a href="/datenschutz" style="color:var(--text-muted);text-decoration:none;">Datenschutzerklärung</a>';
+  if(sep) sep.style.display=(cfg.imprintEnabled&&cfg.privacyEnabled)?'inline':'none';
+}).catch(()=>{});
+
+
+</script>
+<div id="welcome-footer" style="display:none;text-align:center;padding:20px;font-size:12px;color:var(--text-muted);border-top:1px solid var(--sky-border);margin-top:24px;">
+  <span id="wf-imprint"></span>
+  <span id="wf-sep" style="display:none;margin:0 8px;">·</span>
+  <span id="wf-privacy"></span>
+</div>
+
+<script>if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');</script>
+</body>
+</html>

@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Modellflug-Wettbewerb</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700;800&family=Barlow:wght@400;500;600&display=swap');
+
+  :root {
+    --sky: #0a1628;
+    --sky-mid: #0d2244;
+    --sky-card: #0f2a52;
+    --sky-card2: #142f5c;
+    --sky-border: rgba(100,160,255,0.15);
+    --sky-border2: rgba(100,160,255,0.3);
+    --accent: #4da6ff;
+    --accent2: #ffd166;
+    --accent3: #06d6a0;
+    --accent-red: #ef476f;
+    --text: #e8f1ff;
+    --text-muted: #7a9cc4;
+    --text-dim: #4a6a8a;
+    --gold: #ffd166;
+    --silver: #b0c8e8;
+    --bronze: #d4845a;
+    --youth: #06d6a0;
+    --motor: #4da6ff;
+    --sail: #c77dff;
+    --font-head: 'Barlow Condensed', sans-serif;
+    --font-body: 'Barlow', sans-serif;
+    --radius: 10px;
+    --radius-lg: 16px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--sky);
+    color: var(--text);
+    font-family: var(--font-body);
+    min-height: 100vh;
+    overflow-x: hidden;
+    background-image:
+      radial-gradient(ellipse 80% 40% at 50% 0%, rgba(20,60,120,0.8) 0%, transparent 70%),
+      repeating-linear-gradient(0deg, transparent, transparent 40px, rgba(100,160,255,0.015) 40px, rgba(100,160,255,0.015) 41px),
+      repeating-linear-gradient(90deg, transparent, transparent 40px, rgba(100,160,255,0.015) 40px, rgba(100,160,255,0.015) 41px);
+  }
+
+  /* NAV */
+  nav {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    padding: 0 16px;
+    background: rgba(10,22,40,0.97);
+    border-bottom: 1px solid var(--sky-border);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    position: sticky; top: 0; z-index: 100;
+    min-height: 52px;
+  }
+  .nav-logo {
+    font-family: var(--font-head);
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    color: var(--accent);
+    padding: 12px 14px 12px 0;
+    border-right: 1px solid var(--sky-border);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .nav-logo span { color: var(--gold); }
+  /* Hamburger button */
+  #nav-hamburger {
+    display: none;
+    background: none; border: none; cursor: pointer;
+    padding: 10px 14px; color: var(--text-muted);
+    font-size: 20px; line-height: 1;
+    margin-left: auto; flex-shrink: 0;
+    min-width: 44px; min-height: 44px;
+    align-items: center; justify-content: center;
+  }
+  .nav-right { display: flex; align-items: center; gap: 0; flex: 1; }
+  .nav-tabs { display: flex; gap: 0; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  .nav-tabs::-webkit-scrollbar { display: none; }
+  .nav-tab {
+    padding: 14px 16px;
+    font-family: var(--font-head);
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    cursor: pointer;
+    border: none; background: none;
+    border-bottom: 3px solid transparent;
+    transition: all 0.18s;
+    white-space: nowrap;
+    min-height: 52px;
+    display: flex; align-items: center;
+    flex-shrink: 0;
+  }
+  .nav-tab:hover { color: var(--text); }
+  .nav-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  /* Mobile nav drawer */
+  #nav-drawer {
+    display: none;
+    position: fixed; top: 52px; left: 0; right: 0;
+    background: rgba(10,22,40,0.99);
+    border-bottom: 1px solid var(--sky-border);
+    z-index: 99; padding: 8px 0;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+  #nav-drawer.open { display: block; }
+  .drawer-tab {
+    display: flex; align-items: center;
+    width: 100%; padding: 14px 20px;
+    font-family: var(--font-head); font-size: 16px; font-weight: 700;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--text-muted);
+    background: none; border: none; cursor: pointer;
+    min-height: 52px; text-align: left;
+    border-left: 3px solid transparent;
+    transition: all 0.15s;
+  }
+  .drawer-tab.active { color: var(--accent); border-left-color: var(--accent); background: rgba(77,166,255,0.06); }
+  .drawer-tab:hover { color: var(--text); background: rgba(255,255,255,0.04); }
+  .drawer-sep { height: 1px; background: var(--sky-border); margin: 6px 16px; }
+
+  /* PAGES */
+  .page { display: none; padding: 20px 16px; max-width: 1100px; margin: 0 auto; }
+  .page.active { display: block; }
+
+  /* SECTION HEADERS */
+  .section-title {
+    font-family: var(--font-head);
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+  .section-sub {
+    color: var(--text-muted);
+    font-size: 14px;
+    margin-bottom: 20px;
+  }
+
+  /* CARDS */
+  .card {
+    background: var(--sky-card);
+    border: 1px solid var(--sky-border);
+    border-radius: var(--radius-lg);
+    padding: 16px;
+    margin-bottom: 14px;
+  }
+  .card-title {
+    font-family: var(--font-head);
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+  }
+
+  /* FORMS */
+  label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 5px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  input[type=text], input[type=number], select {
+    width: 100%;
+    background: rgba(10,22,40,0.6);
+    border: 1px solid var(--sky-border2);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 16px; /* 16px prevents iOS zoom */
+    padding: 11px 14px;
+    outline: none;
+    transition: border-color 0.18s;
+    -webkit-appearance: none;
+    appearance: none;
+    min-height: 46px;
+  }
+  input[type=text]:focus, input[type=number]:focus, select:focus {
+    border-color: var(--accent);
+  }
+  select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237a9cc4' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 36px;
+  }
+  select option { background: var(--sky-mid); }
+  .form-row { display: grid; gap: 12px; margin-bottom: 12px; }
+  .form-row.cols-2 { grid-template-columns: 1fr 1fr; }
+  .form-row.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .form-row.cols-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+  @media (max-width: 600px) {
+    .form-row.cols-2, .form-row.cols-3, .form-row.cols-4 { grid-template-columns: 1fr; }
+  }
+
+  /* BUTTONS */
+  .btn {
+    font-family: var(--font-head);
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border: none; cursor: pointer;
+    border-radius: var(--radius);
+    padding: 12px 20px;
+    min-height: 46px;
+    transition: all 0.18s;
+    display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+    -webkit-appearance: none;
+    touch-action: manipulation;
+  }
+  .btn-primary { background: var(--accent); color: #03111f; }
+  .btn-primary:active { opacity: 0.85; transform: scale(0.98); }
+  .btn-gold { background: var(--gold); color: #2a1900; }
+  .btn-gold:active { opacity: 0.85; }
+  .btn-danger {
+    background: rgba(239,71,111,0.15);
+    color: var(--accent-red);
+    border: 1px solid rgba(239,71,111,0.3);
+  }
+  .btn-danger:active { background: rgba(239,71,111,0.3); }
+  .btn-ghost {
+    background: var(--sky-card2);
+    color: var(--text-muted);
+    border: 1px solid var(--sky-border);
+  }
+  .btn-ghost:active { opacity: 0.7; }
+  .btn-sm { padding: 8px 14px; font-size: 13px; min-height: 38px; }
+  .btn-block { width: 100%; }
+  @media (hover: hover) {
+    .btn-primary:hover { background: #6db8ff; transform: translateY(-1px); }
+    .btn-gold:hover { background: #ffe59a; }
+    .btn-danger:hover { background: rgba(239,71,111,0.25); }
+    .btn-ghost:hover { color: var(--text); border-color: var(--sky-border2); }
+  }
+
+  /* TOGGLE */
+  .toggle-group { display: flex; gap: 0; border: 1px solid var(--sky-border2); border-radius: var(--radius); overflow: hidden; }
+  .toggle-opt {
+    flex: 1; padding: 11px 12px;
+    font-family: var(--font-head); font-size: 14px; font-weight: 700;
+    letter-spacing: 0.04em; text-transform: uppercase;
+    background: transparent; border: none; cursor: pointer;
+    color: var(--text-muted); transition: all 0.18s; text-align: center;
+    min-height: 46px; touch-action: manipulation;
+    -webkit-appearance: none;
+  }
+  .toggle-opt.active-motor { background: var(--motor); color: #03111f; }
+  .toggle-opt.active-sail { background: var(--sail); color: #1a003f; }
+
+  /* BADGE */
+  .badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    font-family: var(--font-head); font-size: 11px; font-weight: 700;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 3px 8px; border-radius: 5px;
+    white-space: nowrap; flex-shrink: 0;
+  }
+  .badge-motor { background: rgba(77,166,255,0.18); color: var(--motor); border: 1px solid rgba(77,166,255,0.3); }
+  .badge-sail { background: rgba(199,125,255,0.18); color: var(--sail); border: 1px solid rgba(199,125,255,0.3); }
+  .badge-youth { background: rgba(6,214,160,0.18); color: var(--youth); border: 1px solid rgba(6,214,160,0.3); }
+
+  /* LEADERBOARD */
+  .leaderboard-table { width: 100%; border-collapse: collapse; }
+  .leaderboard-table th {
+    font-family: var(--font-head); font-size: 11px; font-weight: 700;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--text-dim); padding: 8px 10px; text-align: left;
+    border-bottom: 1px solid var(--sky-border);
+    white-space: nowrap;
+  }
+  .leaderboard-table td {
+    padding: 10px 10px; font-size: 14px;
+    border-bottom: 1px solid var(--sky-border);
+    vertical-align: middle;
+  }
+  .leaderboard-table tr:last-child td { border-bottom: none; }
+  .leaderboard-table tr { transition: background 0.15s; }
+  @media (hover: hover) { .leaderboard-table tr:hover td { background: rgba(77,166,255,0.05); } }
+  .rank-cell { font-family: var(--font-head); font-size: 18px; font-weight: 800; width: 36px; padding-right: 4px !important; }
+  .rank-1 { color: var(--gold); }
+  .rank-2 { color: var(--silver); }
+  .rank-3 { color: var(--bronze); }
+  .rank-other { color: var(--text-dim); }
+  .pilot-name { font-weight: 600; font-size: 15px; }
+  .score-big { font-family: var(--font-head); font-size: 20px; font-weight: 800; color: var(--accent); }
+  /* Hide "Bester gewertet" col on small screens */
+  @media (max-width: 540px) {
+    .lb-col-best { display: none; }
+    .leaderboard-table th, .leaderboard-table td { padding: 9px 8px; }
+  }
+
+  /* PARTICIPANT LIST */
+  .participant-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px;
+    background: var(--sky-card2);
+    border: 1px solid var(--sky-border);
+    border-radius: var(--radius);
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+  }
+  .participant-name { flex: 1; font-weight: 500; min-width: 100px; font-size: 15px; }
+  .participant-badges { display: flex; gap: 5px; flex-wrap: wrap; }
+
+  /* SETTINGS SLIDERS */
+  .weight-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto;
+    gap: 4px 12px;
+    margin-bottom: 14px;
+    align-items: center;
+  }
+  .weight-label {
+    font-size: 13px; color: var(--text-muted);
+    font-family: var(--font-head); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
+    grid-column: 1; grid-row: 1;
+  }
+  .weight-val {
+    font-family: var(--font-head); font-size: 20px; font-weight: 800;
+    color: var(--accent); text-align: right; min-width: 44px;
+    grid-column: 2; grid-row: 1 / 3;
+    display: flex; align-items: center; justify-content: flex-end;
+  }
+  input[type=range] {
+    width: 100%; accent-color: var(--accent);
+    height: 6px; cursor: pointer;
+    grid-column: 1; grid-row: 2;
+    -webkit-appearance: none; appearance: none;
+    background: var(--sky-border2); border-radius: 3px;
+    touch-action: pan-y;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer; border: none;
+  }
+  input[type=range]::-moz-range-thumb {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer; border: none;
+  }
+
+  /* SCORE ENTRY */
+  .timer-display {
+    font-family: var(--font-head); font-size: clamp(44px, 14vw, 72px); font-weight: 800;
+    color: var(--gold); letter-spacing: 0.02em; text-align: center;
+    line-height: 1;
+  }
+  .timer-sub { text-align: center; color: var(--text-muted); font-size: 13px; margin-top: 4px; margin-bottom: 16px; }
+  .timer-btns { display: flex; gap: 10px; justify-content: center; margin-bottom: 8px; flex-wrap: wrap; }
+  .timer-btns .btn { min-width: 120px; font-size: 17px; min-height: 52px; }
+
+  /* POINTS PREVIEW */
+  .points-preview {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px;
+  }
+  .points-box {
+    background: var(--sky-mid);
+    border: 1px solid var(--sky-border);
+    border-radius: var(--radius);
+    padding: 12px 10px; text-align: center;
+  }
+  .points-box .lbl { font-size: 11px; color: var(--text-muted); font-family: var(--font-head); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+  .points-box .val { font-family: var(--font-head); font-size: clamp(22px, 7vw, 32px); font-weight: 800; color: var(--accent2); line-height: 1.15; }
+
+  /* INFO CHIP */
+  .chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 10px; border-radius: 20px;
+    font-size: 11px; font-family: var(--font-head); font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .chip-info { background: rgba(77,166,255,0.12); color: var(--accent); border: 1px solid rgba(77,166,255,0.25); }
+  .chip-warn { background: rgba(255,209,102,0.12); color: var(--gold); border: 1px solid rgba(255,209,102,0.25); }
+
+  /* SECTION DIVIDER */
+  .divider { border: none; border-top: 1px solid var(--sky-border); margin: 18px 0; }
+
+  /* TOAST */
+  #toast {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    z-index: 9999;
+    background: var(--accent3);
+    color: #021a12;
+    font-family: var(--font-head); font-size: 15px; font-weight: 700;
+    padding: 12px 22px; border-radius: var(--radius);
+    opacity: 0; pointer-events: none; transition: opacity 0.3s, background 0.15s;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    max-width: calc(100vw - 32px);
+    text-align: center;
+  }
+  #toast.show { opacity: 1; }
+  #toast.error { background: var(--accent-red); color: #fff; }
+
+  /* FLEX UTILS */
+  .flex { display: flex; }
+  .flex-between { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+  .gap-8 { gap: 8px; }
+  .gap-12 { gap: 12px; }
+  .mt-8 { margin-top: 8px; }
+  .mt-16 { margin-top: 16px; }
+
+  /* empty state */
+  .empty { text-align: center; padding: 32px 16px; color: var(--text-dim); font-size: 15px; }
+  .empty-icon { font-size: 36px; margin-bottom: 10px; opacity: 0.5; }
+
+  /* Highlight youth rows */
+  tr.is-youth td { background: rgba(6,214,160,0.04); }
+
+  /* Safe area for notch phones */
+  @supports (padding: max(0px)) {
+    nav { padding-left: max(16px, env(safe-area-inset-left)); padding-right: max(16px, env(safe-area-inset-right)); }
+    .page { padding-left: max(16px, env(safe-area-inset-left)); padding-right: max(16px, env(safe-area-inset-right)); }
+    #toast { bottom: max(20px, env(safe-area-inset-bottom)); }
+  }
+
+  /* Mobile nav overrides */
+  @media (max-width: 640px) {
+    .nav-right { display: none; }
+    #nav-hamburger { display: inline-flex; }
+    .page { padding: 16px 12px; }
+    .card { padding: 14px 12px; }
+    .section-title { font-size: 21px; }
+  }
+
+  /* ADMIN LOGIN OVERLAY */
+  #admin-overlay {
+    position: fixed; inset: 0; z-index: 999;
+    background: rgba(4,11,22,0.96);
+    display: flex; align-items: center; justify-content: center;
+    padding: 16px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  #admin-overlay.hidden { display: none; }
+  .login-box {
+    background: var(--sky-card);
+    border: 1px solid var(--sky-border2);
+    border-radius: var(--radius-lg);
+    padding: 32px 28px 24px;
+    width: 100%; max-width: 360px;
+  }
+  .login-header {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--sky-border);
+  }
+  .login-icon-wrap {
+    width: 44px; height: 44px; border-radius: 10px;
+    background: rgba(77,166,255,0.15);
+    border: 1px solid rgba(77,166,255,0.25);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; flex-shrink: 0;
+  }
+  .login-header h2 {
+    font-family: var(--font-head); font-size: 22px; font-weight: 800;
+    color: var(--text); margin: 0; line-height: 1.1;
+  }
+  .login-header p { font-size: 12px; color: var(--text-muted); margin: 2px 0 0; }
+  .login-field { margin-bottom: 12px; }
+  .login-field label { margin-bottom: 6px; }
+  .login-field input {
+    background: rgba(6,16,35,0.8) !important;
+    color: var(--text) !important;
+    border-color: var(--sky-border2) !important;
+    -webkit-text-fill-color: var(--text);
+    font-size: 16px !important;
+    width: 100%;
+    display: block;
+  }
+  .login-field input:focus { border-color: var(--accent) !important; }
+  .login-actions { display: flex; flex-direction: column; gap: 8px; margin-top: 20px; }
+  .login-error {
+    display: flex; align-items: center; gap: 6px;
+    background: rgba(239,71,111,0.12); border: 1px solid rgba(239,71,111,0.3);
+    border-radius: var(--radius); padding: 8px 12px;
+    color: var(--accent-red); font-size: 13px; font-weight: 600;
+    margin-top: 12px; min-height: 0;
+  }
+  .login-error:empty { display: none; }
+  /* Admin badge in nav */
+  .nav-admin-badge {
+    font-family: var(--font-head); font-size: 12px; font-weight: 700;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    padding: 5px 12px; margin-left: auto;
+    background: rgba(77,166,255,0.1); color: var(--accent);
+    border: 1px solid rgba(77,166,255,0.25); border-radius: var(--radius);
+    cursor: pointer; transition: all 0.18s;
+    white-space: nowrap;
+  }
+  .nav-admin-badge:hover { background: rgba(239,71,111,0.15); color: var(--accent-red); border-color: rgba(239,71,111,0.3); }
+
+  /* EDIT MODAL */
+  #edit-overlay {
+    position: fixed; inset: 0; z-index: 1001;
+    background: rgba(4,11,22,0.96);
+    display: flex; align-items: center; justify-content: center;
+    padding: 16px;
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  }
+  #edit-overlay.hidden { display: none; }
+  .edit-box {
+    background: var(--sky-card);
+    border: 1px solid var(--sky-border2);
+    border-radius: var(--radius-lg);
+    padding: 24px 20px;
+    width: 100%; max-width: 420px;
+    max-height: 90vh; overflow-y: auto;
+  }
+  .edit-box h3 {
+    font-family: var(--font-head); font-size: 20px; font-weight: 800;
+    color: var(--text); margin-bottom: 16px;
+    padding-bottom: 12px; border-bottom: 1px solid var(--sky-border);
+  }
+
+  /* CONFIRM DIALOG */
+  #confirm-overlay {
+    position: fixed; inset: 0; z-index: 1000;
+    background: rgba(5,14,28,0.92);
+    display: flex; align-items: center; justify-content: center;
+    backdrop-filter: blur(6px);
+  }
+  #confirm-overlay.hidden { display: none; }
+  .confirm-box {
+    background: var(--sky-card);
+    border: 1px solid rgba(239,71,111,0.4);
+    border-radius: var(--radius-lg);
+    padding: 24px 16px;
+    width: calc(100% - 32px); max-width: 360px;
+    text-align: center;
+    margin: 0 16px;
+  }
+  .confirm-box .confirm-icon { font-size: 32px; margin-bottom: 10px; }
+  .confirm-box h3 {
+    font-family: var(--font-head); font-size: 20px; font-weight: 800;
+    color: var(--text); margin-bottom: 8px;
+  }
+  .confirm-box p { font-size: 14px; color: var(--text-muted); margin-bottom: 22px; line-height: 1.5; }
+  .confirm-btns { display: flex; gap: 10px; justify-content: center; }
+</style>
+</head>
+<body>
+
+<!-- ADMIN LOGIN OVERLAY -->
+<div id="admin-overlay" class="hidden">
+  <div class="login-box">
+    <div class="login-header">
+      <div class="login-icon-wrap">🔐</div>
+      <div>
+        <h2>Admin-Bereich</h2>
+        <p>Bitte anmelden um fortzufahren</p>
+      </div>
+    </div>
+    <div class="login-field">
+      <label>Benutzername</label>
+      <input type="text" id="login-user" placeholder="Benutzername" autocomplete="username" style="background:rgba(6,16,35,0.9)!important;color:#e8f1ff!important;-webkit-text-fill-color:#e8f1ff!important;border:1px solid rgba(100,160,255,0.3)!important;border-radius:10px!important;padding:10px 14px!important;font-size:16px!important;width:100%!important;box-sizing:border-box!important;font-family:var(--font-body)!important;">
+    </div>
+    <div class="login-field">
+      <label>Passwort</label>
+      <input type="password" id="login-pass" placeholder="Passwort" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()" style="background:rgba(6,16,35,0.9)!important;color:#e8f1ff!important;-webkit-text-fill-color:#e8f1ff!important;border:1px solid rgba(100,160,255,0.3)!important;border-radius:10px!important;padding:10px 14px!important;font-size:16px!important;width:100%!important;box-sizing:border-box!important;font-family:var(--font-body)!important;">
+    </div>
+    <div class="login-error" id="login-error"></div>
+    <div class="login-actions">
+      <button class="btn btn-primary btn-block" onclick="doLogin()">🔓 Anmelden</button>
+      <button class="btn btn-ghost btn-block btn-sm" onclick="closeAdminOverlay()">↩ Zurück</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM DIALOG -->
+<div id="confirm-overlay" class="hidden">
+  <div class="confirm-box">
+    <div class="confirm-icon">⚠️</div>
+    <h3 id="confirm-title">Wirklich löschen?</h3>
+    <p id="confirm-msg">Diese Aktion kann nicht rückgängig gemacht werden.</p>
+    <div class="confirm-btns">
+      <button class="btn btn-ghost" onclick="confirmCancel()">Abbrechen</button>
+      <button class="btn btn-danger" onclick="confirmOk()">Ja, löschen</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT ENTRY OVERLAY -->
+<div id="edit-overlay" class="hidden">
+  <div class="edit-box">
+    <h3>✏️ Eintrag bearbeiten</h3>
+    <input type="hidden" id="edit-entry-id">
+    <div class="form-row cols-2" style="margin-bottom:12px;">
+      <div>
+        <label>Pilot</label>
+        <select id="edit-pilot"></select>
+      </div>
+      <div>
+        <label>Flugzeugtyp</label>
+        <div class="toggle-group">
+          <button class="toggle-opt" id="edit-type-motor" onclick="setEditType('motor')">✈ Motor</button>
+          <button class="toggle-opt" id="edit-type-sail" onclick="setEditType('sail')">🛩 Segler</button>
+        </div>
+      </div>
+    </div>
+    <label style="margin-bottom:8px;">Zeit</label>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+      <div><label style="font-size:11px;">Minuten</label><input type="number" id="edit-time-min" min="0" max="10" placeholder="0"></div>
+      <div><label style="font-size:11px;">Sekunden</label><input type="number" id="edit-time-sec" min="0" max="59" placeholder="0"></div>
+    </div>
+    <label style="margin-bottom:8px;">Abstand</label>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:6px;">
+      <div><label style="font-size:11px;">Meter</label><input type="number" id="edit-dist-m" min="0" max="20" placeholder="0"></div>
+      <div><label style="font-size:11px;">Zentimeter</label><input type="number" id="edit-dist-cm" min="0" max="99" placeholder="0"></div>
+    </div>
+    <div class="flex gap-8" style="margin-top:20px; flex-wrap:wrap;">
+      <button class="btn btn-primary" style="flex:1;" onclick="saveEdit()">✓ Speichern</button>
+      <button class="btn btn-ghost" style="flex:1;" onclick="closeEdit()">Abbrechen</button>
+    </div>
+  </div>
+</div>
+
+<nav>
+  <div class="nav-logo">✈ Modell<span>flug</span></div>
+  <div class="nav-right" id="nav-right-desktop">
+    <div class="nav-tabs" id="nav-tabs-public">
+      <button class="nav-tab active" id="tab-leaderboard" onclick="showPage('leaderboard', event)">Leaderboard</button>
+    </div>
+    <div class="nav-tabs" id="nav-tabs-admin" style="display:none;">
+      <button class="nav-tab" id="tab-entry" onclick="showPage('entry', event)">Wertung eintragen</button>
+      <button class="nav-tab" id="tab-participants" onclick="showPage('participants', event)">Teilnehmer</button>
+      <button class="nav-tab" id="tab-settings" onclick="showPage('settings', event)">Einstellungen</button>
+    </div>
+    <button class="nav-admin-badge" id="nav-admin-btn" onclick="openAdminArea()">🔒 Admin</button>
+  </div>
+  <button id="nav-hamburger" onclick="toggleDrawer()" aria-label="Menü">☰</button>
+</nav>
+
+<!-- MOBILE DRAWER -->
+<div id="nav-drawer">
+  <button class="drawer-tab active" id="drawer-tab-leaderboard" onclick="drawerNav('leaderboard')">🏆 Leaderboard</button>
+  <div id="drawer-admin-tabs" style="display:none;">
+    <div class="drawer-sep"></div>
+    <button class="drawer-tab" id="drawer-tab-entry" onclick="drawerNav('entry')">✏️ Wertung eintragen</button>
+    <button class="drawer-tab" id="drawer-tab-participants" onclick="drawerNav('participants')">👥 Teilnehmer</button>
+    <button class="drawer-tab" id="drawer-tab-settings" onclick="drawerNav('settings')">⚙️ Einstellungen</button>
+  </div>
+  <div class="drawer-sep"></div>
+  <button class="drawer-tab" id="drawer-admin-btn" onclick="openAdminArea(); closeDrawer();">🔒 Admin-Bereich</button>
+</div>
+
+<!-- ========== LEADERBOARD ========== -->
+<div class="page active" id="page-leaderboard">
+  <div class="flex-between" style="margin-bottom:6px;">
+    <div class="section-title">🏆 Leaderboard</div>
+    <div class="flex gap-8">
+      <button class="btn btn-ghost btn-sm" onclick="toggleView()">
+        <span id="view-label">Jugendwertung</span>
+      </button>
+    </div>
+  </div>
+  <div class="section-sub" id="lb-subtitle">Gesamtwertung aller Teilnehmer</div>
+
+  <div id="tension-banner-wrap" style="display:none;margin-bottom:12px;">
+    <div style="background:linear-gradient(135deg,rgba(255,180,0,0.15),rgba(255,100,0,0.1));border:2px solid rgba(255,180,0,0.4);border-radius:var(--radius-lg);padding:16px 20px;text-align:center;">
+      <div style="font-family:var(--font-head);font-size:20px;font-weight:800;color:var(--gold);letter-spacing:0.04em;">🎭 SPANNUNGSMODUS AKTIV</div>
+      <div style="font-size:13px;color:var(--text-muted);margin-top:4px;">Das Ergebnis wird erst nach dem letzten Flug aller Teilnehmer enthüllt!</div>
+    </div>
+  </div>
+
+  <div class="card" style="overflow-x:auto;">
+    <div class="flex gap-8" style="margin-bottom:14px; flex-wrap:wrap;">
+      <div class="chip chip-info">Aktualisiert in Echtzeit</div>
+      <div class="chip chip-warn" id="lb-mode-chip">Gesamt</div>
+    </div>
+    <div id="lb-container">
+      <div class="empty"><div class="empty-icon">📋</div>Noch keine Ergebnisse vorhanden.</div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:8px;">
+    <div class="card-title">Legende</div>
+    <div class="flex gap-12" style="flex-wrap:wrap; font-size:13px; color:var(--text-muted);">
+      <div><span class="badge badge-motor">Motor</span> Motorflugzeug — max. 1 Min.</div>
+      <div><span class="badge badge-sail">Segler</span> Segelflugzeug — max. 2 Min.</div>
+      <div><span class="badge badge-youth">Jugend</span> Jugendwertung</div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== SCORE ENTRY ========== -->
+<div class="page" id="page-entry">
+  <div class="section-title">✏️ Wertung eintragen</div>
+  <div class="section-sub">Flug auswählen, Stopuhr starten, Abstand messen</div>
+
+  <div class="card">
+    <div class="card-title">Pilot & Flugzeugtyp</div>
+    <div class="form-row cols-2">
+      <div>
+        <label>Pilot auswählen</label>
+        <select id="entry-pilot">
+          <option value="">— Pilot wählen —</option>
+        </select>
+      </div>
+      <div>
+        <label>Flugzeugtyp</label>
+        <div class="toggle-group">
+          <button class="toggle-opt active-motor" id="type-motor" onclick="setType('motor')">✈ Motor</button>
+          <button class="toggle-opt" id="type-sail" onclick="setType('sail')">🛩 Segler</button>
+        </div>
+        <div style="font-size:12px; color:var(--text-dim); margin-top:6px;" id="type-hint">Optimum: genau bei 1:00 Min. landen</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Stopuhr</div>
+    <div class="timer-display" id="timer-display">0:00</div>
+    <div class="timer-sub" id="timer-limit">Limit: 1:00 Min.</div>
+    <div class="timer-btns">
+      <button class="btn btn-gold" id="timer-btn" onclick="toggleTimer()">▶ Start</button>
+      <button class="btn btn-ghost" onclick="resetTimer()">↺ Reset</button>
+    </div>
+    <div style="text-align:center; margin-top:8px;">
+      <label style="display:inline-flex; align-items:center; gap:8px; text-transform:none; font-size:13px; cursor:pointer;">
+        <input type="checkbox" id="manual-time" onchange="toggleManualTime()"> Zeit manuell eingeben
+      </label>
+    </div>
+    <div id="manual-time-row" style="display:none; margin-top:12px;">
+      <label>Zeit manuell</label>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+        <div>
+          <label style="font-size:11px;">Minuten</label>
+          <input type="number" id="time-min" min="0" max="10" placeholder="0" oninput="updatePreview()">
+        </div>
+        <div>
+          <label style="font-size:11px;">Sekunden</label>
+          <input type="number" id="time-sec" min="0" max="59" placeholder="0" oninput="updatePreview()">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Landeabstand vom Flatterband</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px;">
+      <div>
+        <label style="font-size:11px;">Meter</label>
+        <input type="number" id="dist-m" min="0" max="20" placeholder="0" oninput="syncDist('m'); updatePreview()">
+      </div>
+      <div>
+        <label style="font-size:11px;">Zentimeter</label>
+        <input type="number" id="dist-cm" min="0" max="99" placeholder="0" oninput="syncDist('cm'); updatePreview()">
+      </div>
+    </div>
+    <div style="font-size:12px;color:var(--text-muted);background:var(--sky-mid);border-radius:var(--radius);padding:7px 10px;" id="dist-total-display">Gesamt: — cm</div>
+    <div style="font-size:11px; color:var(--text-dim); margin-top:6px;">≤ 10 cm = Maximalpunkte · alle 10 cm weniger Punkte · &gt; 500 cm = 0 Punkte</div>
+  </div>
+
+  <div class="points-preview">
+    <div class="points-box">
+      <div class="lbl">Zeitpunkte</div>
+      <div class="val" id="prev-time">—</div>
+    </div>
+    <div class="points-box">
+      <div class="lbl">Abstandspunkte</div>
+      <div class="val" id="prev-dist">—</div>
+    </div>
+    <div class="points-box">
+      <div class="lbl">Gesamt</div>
+      <div class="val" id="prev-total" style="color:var(--accent);">—</div>
+    </div>
+    <div class="points-box">
+      <div class="lbl">Max möglich</div>
+      <div class="val" id="prev-max" style="color:var(--text-muted); font-size:20px;">—</div>
+    </div>
+  </div>
+
+  <button class="btn btn-primary btn-block mt-16" onclick="submitEntry()" style="font-size:17px; padding:14px;">
+    ✓ Ergebnis speichern
+  </button>
+
+  <hr class="divider">
+
+  <div class="card">
+    <div class="card-title">Bisherige Flüge</div>
+    <div id="recent-entries">
+      <div class="empty"><div class="empty-icon">📭</div>Noch keine Einträge.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== PARTICIPANTS ========== -->
+<div class="page" id="page-participants">
+  <div class="section-title">👥 Teilnehmer</div>
+  <div class="section-sub">Piloten verwalten</div>
+
+  <div class="card">
+    <div class="card-title">Neuen Teilnehmer hinzufügen</div>
+    <div class="form-row cols-2">
+      <div>
+        <label>Vorname & Name</label>
+        <input type="text" id="p-name" placeholder="z.B. Max Mustermann" onkeydown="if(event.key==='Enter')addParticipant()">
+      </div>
+      <div>
+        <label>Wertung</label>
+        <div class="toggle-group">
+          <button class="toggle-opt active-motor" id="cat-senior" onclick="setPCat('senior')">Senior</button>
+          <button class="toggle-opt" id="cat-youth" onclick="setPCat('youth')">Jugend</button>
+        </div>
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="addParticipant()">+ Hinzufügen</button>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Teilnehmerliste</div>
+    <div id="participant-list">
+      <div class="empty"><div class="empty-icon">🙋</div>Noch keine Teilnehmer.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== SETTINGS ========== -->
+<div class="page" id="page-settings">
+  <div class="section-title">⚙️ Einstellungen</div>
+  <div class="section-sub">Punktegewichtung und Regeln anpassen</div>
+
+  <div class="card">
+    <div class="card-title">Punktegewichtung</div>
+    <p style="font-size:13px; color:var(--text-muted); margin-bottom:16px;">Bestimmt, wie viele Punkte jeweils maximal für Zeit und Abstand vergeben werden.</p>
+
+    <div class="weight-row">
+      <div class="weight-label">Max. Zeitpunkte</div>
+      <input type="range" min="10" max="200" step="5" id="w-time" oninput="updateWeightLabels()">
+      <div class="weight-val" id="w-time-val">50</div>
+    </div>
+    <div class="weight-row">
+      <div class="weight-label">Max. Abstandspunkte</div>
+      <input type="range" min="10" max="200" step="5" id="w-dist" oninput="updateWeightLabels()">
+      <div class="weight-val" id="w-dist-val">50</div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="card-title">Zeitlimits</div>
+    <div class="form-row cols-2" style="margin-bottom:6px;">
+      <div>
+        <label>Motorflugzeug</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div><label style="font-size:11px;">Min.</label><input type="number" id="limit-motor-min" min="0" max="9" placeholder="1"></div>
+          <div><label style="font-size:11px;">Sek.</label><input type="number" id="limit-motor-sec" min="0" max="59" placeholder="0"></div>
+        </div>
+      </div>
+      <div>
+        <label>Segelflugzeug</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div><label style="font-size:11px;">Min.</label><input type="number" id="limit-sail-min" min="0" max="9" placeholder="2"></div>
+          <div><label style="font-size:11px;">Sek.</label><input type="number" id="limit-sail-sec" min="0" max="59" placeholder="0"></div>
+        </div>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="card-title">Abstandsregeln</div>
+    <div class="form-row cols-2">
+      <div>
+        <label>Maximaler Abstand (cm) für Punkte</label>
+        <input type="number" id="max-dist" min="50" max="2000" placeholder="500">
+      </div>
+      <div>
+        <label>Schrittweite für Punkte (cm)</label>
+        <input type="number" id="dist-step" min="1" max="100" placeholder="10">
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="card-title">Durchgänge & Wertung</div>
+    <div class="form-row cols-2" style="margin-bottom:14px;">
+      <div>
+        <label>Anzahl Durchgänge pro Pilot</label>
+        <input type="number" id="s-rounds" min="1" max="10" placeholder="3">
+      </div>
+      <div>
+        <label>Schlechtesten Flug streichen</label>
+        <div class="toggle-group">
+          <button class="toggle-opt" id="s-drop-on" onclick="setDropWorst(true)">✓ An</button>
+          <button class="toggle-opt active-motor" id="s-drop-off" onclick="setDropWorst(false)">✕ Aus</button>
+        </div>
+      </div>
+    </div>
+    <div class="form-row cols-2" style="margin-bottom:4px;">
+      <div>
+        <label>🎭 Spannungsmodus</label>
+        <div class="toggle-group">
+          <button class="toggle-opt" id="s-tension-on" onclick="setTensionMode(true)">🔥 An</button>
+          <button class="toggle-opt active-motor" id="s-tension-off" onclick="setTensionMode(false)">✕ Aus</button>
+        </div>
+      </div>
+      <div style="display:flex;align-items:flex-end;padding-bottom:4px;">
+        <p style="font-size:12px;color:var(--text-muted);line-height:1.5;">Leaderboard im letzten Durchgang unlesbar machen — für maximale Spannung beim Finale!</p>
+      </div>
+    </div>
+
+    <hr class="divider">
+    <div class="card-title">Wettkampfname</div>
+    <div class="form-row">
+      <div>
+        <label>Name / Bezeichnung</label>
+        <input type="text" id="contest-name" placeholder="z.B. Vereinsmeisterschaft 2025">
+      </div>
+    </div>
+
+    <hr class="divider">
+    <button class="btn btn-primary btn-block" onclick="saveSettings()" style="font-size:16px;padding:13px;margin-bottom:4px;">
+      💾 Einstellungen speichern
+    </button>
+
+    <hr class="divider">
+    <div class="card-title">Daten</div>
+    <div class="flex gap-8" style="flex-wrap:wrap;">
+      <button class="btn btn-ghost" onclick="exportData()">📥 Daten exportieren (JSON)</button>
+      <button class="btn btn-ghost" onclick="importData()">📤 Daten importieren</button>
+      <button class="btn btn-danger" onclick="clearAllData()">🗑 Alle Daten löschen</button>
+    </div>
+    <input type="file" id="import-file" accept=".json" style="display:none" onchange="doImport(event)">
+  </div>
+
+  <div class="card">
+    <div class="card-title">Punkteformel</div>
+    <div style="font-size:13px; color:var(--text-muted); line-height:1.7;">
+      <p><strong style="color:var(--text);">Zeitpunkte:</strong> Das Optimum ist eine Landung <em>exakt</em> beim Zeitlimit (1 Min. Motor / 2 Min. Segler) = volle Punkte. Jede Abweichung — egal ob zu früh oder zu spät — reduziert die Punkte symmetrisch linear. Bei doppelter Abweichung vom Limit = 0 Punkte.</p>
+      <p style="margin-top:8px;"><strong style="color:var(--text);">Abstandspunkte:</strong> Abstand ≤ 10 cm = volle Punkte. Pro weiterer 10-cm-Stufe bis max. Abstand linear weniger. Über max. Abstand: 0 Punkte.</p>
+      <p style="margin-top:8px;"><strong style="color:var(--text);">Gesamtpunkte:</strong> Zeitpunkte + Abstandspunkte</p>
+    </div>
+  </div>
+</div>
+
+<div id="toast">Gespeichert!</div>
+
