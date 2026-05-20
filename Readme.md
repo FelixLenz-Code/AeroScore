@@ -36,9 +36,12 @@
 - Echtzeit-Leaderboard mit Live-Update per SSE (Server-Sent Events)
 - Dense Ranking (sportliche Wertung bei Gleichstand)
 - Jugend- und Senior-Wertung separat umschaltbar
+- **Vereinswertung** — optionale Teamwertung nach Verein (Summe oder Mittelwert), mit Detail-Ansicht pro Verein per Klick
+- Umschaltung zwischen Gesamt-, Jugend- und Vereinswertung per Dropdown
 - Schlechtesten Durchgang je Disziplin automatisch streichen (Präzision, Limbo, Ballon)
 - Neuberechnung aller Einträge bei nachträglicher Einstellungsänderung
-- **Vollbild-/Beamer-Modus** mit animierter Rangliste und Startreihenfolge
+- **Vollbild-/Beamer-Modus** mit animierter Rangliste, Startreihenfolge, QR-Code und Siegertreppchen
+- PDF-Export für alle Wertungsarten (Gesamt, Jugend, Vereinswertung)
 
 <img src="Screenshots/Vollbild.png" alt="Vollbild" width="700"/>
 <img src="Screenshots/Animation.png" alt="Animation" width="700"/>
@@ -49,6 +52,7 @@
 - Zugriffsverwaltung: Wettbewerbe mit anderen Benutzern teilen
 - Teilnehmer und Einträge im Mehrfach-Auswahl-Modus löschen
 - Druckbare Startliste
+- Pilot-Ergebniskarte als Bild teilen oder herunterladen
 - Abgeschlossene Wettbewerbe werden nach 14 Tagen automatisch archiviert
 
 <img src="Screenshots/Teilnehmereintrag.png" alt="Teilnehmereintrag" width="700"/>
@@ -489,6 +493,8 @@ data/
 ## Hinweis zur KI-Unterstützung
 
 Diese Software wurde vollständig mithilfe von **Claude** (einem KI-Assistenten von Anthropic) entwickelt. Der Autor hat die Anforderungen definiert, Entscheidungen getroffen und das Ergebnis geprüft — der Code selbst wurde durch den Dialog mit der KI generiert.
+
+Das AeroScore-Logo wurde mit **Google Gemini** erstellt.
 
 **Haftungsausschluss:** Die Software wird so bereitgestellt, wie sie ist (*as-is*), ohne jegliche Garantie auf Korrektheit, Vollständigkeit oder Eignung für einen bestimmten Zweck. Der Autor übernimmt keinerlei Haftung für Schäden, Datenverluste oder sonstige Probleme, die durch die Verwendung dieser Software entstehen. Die Nutzung erfolgt auf eigene Verantwortung.
 

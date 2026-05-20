@@ -384,6 +384,7 @@
     min-height: 46px;
     transition: all 0.18s;
     display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+    white-space: nowrap;
     -webkit-appearance: none;
     touch-action: manipulation;
   }
@@ -405,6 +406,15 @@
   .btn-ghost:active { opacity: 0.7; }
   .btn-sm { padding: 8px 14px; font-size: 13px; min-height: 38px; }
   .btn-block { width: 100%; }
+  select.btn-sm {
+    appearance: none; -webkit-appearance: none;
+    text-transform: none; letter-spacing: 0;
+    font-family: var(--font-body); font-weight: 500;
+    padding-right: 28px;
+    height: 38px; box-sizing: border-box;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%2364748b' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 10px center;
+  }
   @media (hover: hover) {
     .btn-primary:hover { background: #6db8ff; transform: translateY(-1px); }
     .btn-gold:hover { background: #ffe59a; }
@@ -1287,10 +1297,18 @@
         </div>
       </div>
     </div>
-    <label class="checkbox-label" style="margin-bottom:16px;">
+    <label class="checkbox-label" style="margin-bottom:12px;">
       <input type="checkbox" id="edit-p-lost">
       <span>🛸 Modell verloren — scheidet aus</span>
     </label>
+    <div id="edit-p-club-wrap" class="form-row" style="margin-bottom:16px;display:none;">
+      <div>
+        <label>🏛 Verein</label>
+        <select id="edit-p-club" style="width:100%;background:var(--sky-mid);border:1px solid var(--sky-border2);border-radius:var(--radius);padding:8px 12px;color:var(--text);font-size:14px;outline:none;">
+          <option value="">— kein Verein —</option>
+        </select>
+      </div>
+    </div>
     <div class="modal-footer">
       <button class="btn btn-primary" style="flex:1;" onclick="saveEditParticipant()">✓ Speichern</button>
       <button class="btn btn-ghost"   style="flex:1;" onclick="closeEditParticipant()">Abbrechen</button>
@@ -1369,6 +1387,27 @@
   </div>
 </div>
 
+<!-- ── CLUB DETAIL OVERLAY ───────────────────────────────────── -->
+<div id="club-detail-overlay" class="overlay hidden" onclick="if(event.target===this)closeClubDetail()">
+  <div class="pilot-detail-box">
+    <div class="pilot-detail-header">
+      <div class="pilot-rank" id="cd-rank"></div>
+      <h2 id="cd-name"></h2>
+    </div>
+    <div class="pilot-detail-body">
+      <div class="stat-grid">
+        <div class="stat-box"><div class="lbl" id="cd-score-lbl">Σ Punkte</div><div class="val" id="cd-score"></div></div>
+        <div class="stat-box"><div class="lbl">Piloten</div><div class="val" id="cd-count"></div></div>
+      </div>
+      <div class="section-label" style="margin-top:4px;">Teilnehmer</div>
+      <div id="cd-members"></div>
+    </div>
+    <div style="padding:14px 22px;border-top:1px solid var(--sky-border);flex-shrink:0;">
+      <button class="btn btn-ghost btn-block" onclick="closeClubDetail()">✕ Schließen</button>
+    </div>
+  </div>
+</div>
+
 <!-- ── WIZARD OVERLAY ─────────────────────────────────────────── -->
 <div id="wizard-overlay" class="overlay hidden">
   <div class="wizard-box">
@@ -1435,7 +1474,7 @@
           <button type="button" onclick="setWizMode(null)" style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:13px;margin-bottom:14px;padding:0;display:flex;align-items:center;gap:4px;">← Zurück zur Auswahl</button>
           <div class="form-row" style="margin-bottom:14px;">
             <div><label>Wettbewerbsname *</label>
-              <input type="text" id="wiz-name" placeholder="z.B. Vereinsmeisterschaft 2025" oninput="wizValidate()">
+              <input type="text" id="wiz-name" placeholder="z.B. Vereinsmeisterschaft 2025" oninput="wizValidate();this.style.outline='';">
             </div>
           </div>
           <div class="form-row cols-2">
@@ -1478,6 +1517,28 @@
             </div>
             <div style="display:flex;align-items:flex-end;padding-bottom:4px;">
               <p style="font-size:12px;color:var(--text-muted);line-height:1.5;">Wird beim Siegertreppchen abgespielt.</p>
+            </div>
+          </div>
+          <div class="form-row" style="margin-top:14px;">
+            <div>
+              <label>🏛 Vereinswertung <span style="font-size:11px;color:var(--text-dim);font-weight:400;">(optional)</span></label>
+              <div class="toggle-group" style="margin-top:6px;">
+                <button class="toggle-opt" id="wiz-clubs-on" onclick="setWizClubsEnabled(true)">✓ An</button>
+                <button class="toggle-opt active-motor" id="wiz-clubs-off" onclick="setWizClubsEnabled(false)">✕ Aus</button>
+              </div>
+              <div id="wiz-clubs-config" style="display:none;margin-top:12px;padding:12px;background:var(--sky-mid);border-radius:var(--radius);border:1px solid var(--sky-border);">
+                <label style="margin-bottom:6px;display:block;">Wertungsart</label>
+                <div class="toggle-group" style="margin-bottom:12px;">
+                  <button class="toggle-opt active-motor" id="wiz-club-sum-btn" onclick="setWizClubAverage(false)">Σ Summe</button>
+                  <button class="toggle-opt" id="wiz-club-avg-btn" onclick="setWizClubAverage(true)">∅ Mittelwert</button>
+                </div>
+                <label style="margin-bottom:6px;display:block;">Teilnehmende Vereine</label>
+                <div style="display:flex;gap:6px;margin-bottom:8px;">
+                  <input type="text" id="wiz-club-input" placeholder="Vereinsname..." style="flex:1;" onkeydown="if(event.key==='Enter')addWizClub()">
+                  <button class="btn btn-primary btn-sm" onclick="addWizClub()">+</button>
+                </div>
+                <div id="wiz-club-list"></div>
+              </div>
             </div>
           </div>
         </div>
@@ -1692,6 +1753,12 @@
             <input type="file" id="wiz-p-import-file" accept=".json" style="display:none;" onchange="importWizParticipants(this)">
           </label>
         </div>
+        <div id="wiz-pclub-wrap" style="display:none;margin-bottom:8px;">
+          <label>🏛 Verein</label>
+          <select id="wiz-pclub" style="width:100%;background:var(--sky-mid);border:1px solid var(--sky-border2);border-radius:var(--radius);padding:8px 12px;color:var(--text);font-size:14px;outline:none;">
+            <option value="">— kein Verein —</option>
+          </select>
+        </div>
         <div id="wiz-p-list" style="max-height:220px;overflow-y:auto;"></div>
       </div><!-- /wizard-p4 -->
     </div>
@@ -1780,9 +1847,12 @@
   <div class="flex-between" style="margin-bottom:6px;">
     <div class="section-title">🏆 Leaderboard</div>
     <div style="display:flex;gap:8px;align-items:center;">
-      <button class="btn btn-ghost btn-sm" onclick="openFullscreen()" title="Vollbild-Modus">⛶ Vollbild</button>
+      <button class="btn btn-ghost btn-sm" id="lb-fs-btn" onclick="openFullscreen()" title="Vollbild-Modus">⛶ Vollbild</button>
       <button class="btn btn-ghost btn-sm" id="lb-pdf-btn" onclick="exportLeaderboardPDF()" title="Als PDF exportieren" style="display:none;">📄 PDF</button>
-      <button class="btn btn-ghost btn-sm" onclick="toggleView()"><span id="view-label">Jugendwertung</span></button>
+      <select id="lb-view-select" onchange="setView(this.value)" class="btn btn-ghost btn-sm" style="cursor:pointer;outline:none;">
+        <option value="all">Gesamtwertung</option>
+        <option value="youth">Jugendwertung</option>
+      </select>
     </div>
   </div>
   <div class="section-sub" id="lb-subtitle">Gesamtwertung aller Teilnehmer</div>
@@ -2066,6 +2136,14 @@
           <button class="toggle-opt active-motor" id="cat-senior" onclick="setPCat('senior')">Senior</button>
           <button class="toggle-opt" id="cat-youth" onclick="setPCat('youth')">Jugend</button>
         </div>
+      </div>
+    </div>
+    <div id="p-club-wrap" class="form-row" style="display:none;">
+      <div>
+        <label>🏛 Verein</label>
+        <select id="p-club" style="width:100%;background:var(--sky-mid);border:1px solid var(--sky-border2);border-radius:var(--radius);padding:8px 12px;color:var(--text);font-size:14px;outline:none;">
+          <option value="">— kein Verein —</option>
+        </select>
       </div>
     </div>
     <div class="form-row cols-2" style="margin-bottom:0;">
@@ -2592,6 +2670,34 @@ rclone config  ← denselben Anbieter &amp; Account wie bisher<button class="gui
     </div>
 
     <hr class="divider">
+    <div id="cs-clubs-section">
+      <div class="card-title" style="margin-bottom:10px;">🏛 Vereinswertung</div>
+      <div class="form-row cols-2" style="margin-bottom:10px;">
+        <div>
+          <label>Aktivierung</label>
+          <div class="toggle-group">
+            <button class="toggle-opt" id="cs-clubs-on" onclick="setCSClubsEnabled(true)">✓ An</button>
+            <button class="toggle-opt active-motor" id="cs-clubs-off" onclick="setCSClubsEnabled(false)">✕ Aus</button>
+          </div>
+        </div>
+        <div id="cs-club-avg-wrap" style="display:none;">
+          <label>Wertungsart</label>
+          <div class="toggle-group">
+            <button class="toggle-opt active-motor" id="cs-club-sum-btn" onclick="setCSClubAverage(false)">Σ Summe</button>
+            <button class="toggle-opt" id="cs-club-avg-btn" onclick="setCSClubAverage(true)">∅ Mittelwert</button>
+          </div>
+        </div>
+      </div>
+      <div id="cs-club-list-wrap" style="display:none;">
+        <label style="margin-bottom:6px;display:block;">Teilnehmende Vereine</label>
+        <div style="display:flex;gap:6px;margin-bottom:8px;">
+          <input type="text" id="cs-club-input" placeholder="Vereinsname..." style="flex:1;" onkeydown="if(event.key==='Enter')addCSClub()">
+          <button class="btn btn-primary btn-sm" onclick="addCSClub()">+</button>
+        </div>
+        <div id="cs-club-list" style="margin-bottom:4px;"></div>
+      </div>
+    </div>
+    <hr class="divider">
     <div id="cs-sharing-section" style="display:none;">
       <div class="card-title" style="margin-bottom:10px;">Zugriff teilen</div>
       <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">Andere User können diesen Wettbewerb dann ebenfalls bearbeiten.</div>
@@ -2615,7 +2721,8 @@ rclone config  ← denselben Anbieter &amp; Account wie bisher<button class="gui
 let participants=[], entries=[], settings={
   wTime:50,wDist:50,limitMotor:60,limitSail:120,
   maxDist:500,distStep:10,rounds:3,
-  dropWorst:false,dropWorstLimbo:false,dropWorstBallon:false,tensionMode:false,contestName:'Wettbewerb'
+  dropWorst:false,dropWorstLimbo:false,dropWorstBallon:false,tensionMode:false,contestName:'Wettbewerb',
+  clubsEnabled:false,clubs:[],clubAverage:false
 };
 let contests=[], currentContest=null, currentContestId=null;
 let currentType='sail', pCatSelected='senior', pTypeSelected='sail';
@@ -2948,6 +3055,7 @@ async function init(){
   const hashParts=location.hash.replace('#','').split('/');
   window._initHashSlug=hashParts[1]||null;
   try{ await loadContests(); }catch(e){ if(e.needsViewerAuth) return; throw e; }
+  applySettings();
   applyAuthState();
   updatePickerBar();
   updatePreview();
@@ -3247,10 +3355,12 @@ async function doDuplicate(){
 // ======================== WIZARD ========================
 let wizDropWorst=false, wizDropWorstLimbo=false, wizDropWorstBallon=false, wizPType='sail', wizParticipants=[], wizStep=1;
 let wizDisciplines=new Set(['precision']), wizLimboLevels=[], wizLimboLevelCount=0;
+let wizClubsEnabled=false, wizClubs=[], wizClubAverage=false;
 
 function openWizard(){
   wizStep=1; wizDropWorst=false; wizPType='sail';
   wizParticipants=[]; wizDisciplines=new Set(['precision']);
+  wizClubsEnabled=false; wizClubs=[]; wizClubAverage=false;
   wizLimboLevels=[]; wizLimboLevelCount=0;
   wizLimboHeights=[300,250,200,150,100,75,50];
   wizMode=null; wizImportData=null;
@@ -3272,6 +3382,8 @@ function openWizard(){
   const pl=document.getElementById('wiz-p-list'); if(pl) pl.innerHTML='';
   const ll=document.getElementById('wiz-limbo-levels'); if(ll) ll.innerHTML='';
   setWizDrop(false); setWizDropLimbo(false); setWizDropBallon(false); setWizPType('sail'); setWizPCat('senior'); setWizTension(false);
+  setWizClubsEnabled(false); setWizClubAverage(false); renderWizClubList();
+  const wizClubInp=document.getElementById('wiz-club-input'); if(wizClubInp) wizClubInp.value='';
   const wizFanfareSel=document.getElementById('wiz-fanfare');
   if(wizFanfareSel) wizFanfareSel.value='';
   loadWizSounds();
@@ -3440,7 +3552,7 @@ function wizValidate(){
       const hasName = !!(document.getElementById('wiz-import-name')?.value.trim());
       nb.disabled = !(hasFile && hasName); return;
     }
-    nb.disabled=!document.getElementById('wiz-name')?.value.trim();
+    nb.disabled=false;
   } else {
     nb.disabled=false;
   }
@@ -3474,6 +3586,53 @@ function setWizDropBallon(v){
 }
 let wizTensionMode=false;
 function setWizTension(v){ wizTensionMode=v; const on=document.getElementById('wiz-tension-on'),off=document.getElementById('wiz-tension-off'); if(on) on.className='toggle-opt'+(v?' active-motor':''); if(off) off.className='toggle-opt'+(!v?' active-motor':''); }
+function setWizClubsEnabled(v){
+  wizClubsEnabled=v;
+  const on=document.getElementById('wiz-clubs-on'),off=document.getElementById('wiz-clubs-off');
+  if(on) on.className='toggle-opt'+(v?' active-motor':'');
+  if(off) off.className='toggle-opt'+(!v?' active-motor':'');
+  const cfg=document.getElementById('wiz-clubs-config');
+  if(cfg) cfg.style.display=v?'block':'none';
+  renderWizClubList();
+  updateWizPClubSelect();
+}
+function setWizClubAverage(v){
+  wizClubAverage=v;
+  const sb=document.getElementById('wiz-club-sum-btn'),ab=document.getElementById('wiz-club-avg-btn');
+  if(sb) sb.className='toggle-opt'+(!v?' active-motor':'');
+  if(ab) ab.className='toggle-opt'+(v?' active-motor':'');
+}
+function addWizClub(){
+  const inp=document.getElementById('wiz-club-input');
+  const name=(inp?.value||'').trim();
+  if(!name){toast('Bitte Vereinsname eingeben!',true);return;}
+  if(wizClubs.includes(name)){toast('Verein bereits vorhanden!',true);return;}
+  wizClubs.push(name); if(inp) inp.value='';
+  renderWizClubList(); updateWizPClubSelect();
+}
+function removeWizClub(idx){
+  const name=wizClubs[idx]; if(!name) return;
+  confirmAction('Verein entfernen',`„${name}" aus der Liste entfernen?`,()=>{
+    wizClubs.splice(idx,1);
+    renderWizClubList(); updateWizPClubSelect();
+  },'Entfernen');
+}
+function renderWizClubList(){
+  const el=document.getElementById('wiz-club-list'); if(!el) return;
+  if(!wizClubs.length){el.innerHTML='<div style="font-size:12px;color:var(--text-dim);padding:4px 0;">Noch keine Vereine.</div>';return;}
+  el.innerHTML=wizClubs.map((name,i)=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--sky-border);">
+      <span style="flex:1;font-size:13px;">🏛 ${esc(name)}</span>
+      <button class="btn btn-ghost btn-sm" onclick="removeWizClub(${i})" style="color:var(--accent-red);">✕</button>
+    </div>`).join('');
+}
+function updateWizPClubSelect(){
+  const sel=document.getElementById('wiz-pclub'); if(!sel) return;
+  const prev=sel.value;
+  sel.innerHTML='<option value="">— kein Verein —</option>'+wizClubs.map(c=>`<option value="${esc(c)}"${prev===c?' selected':''}>${esc(c)}</option>`).join('');
+  const wrap=document.getElementById('wiz-pclub-wrap');
+  if(wrap) wrap.style.display=(wizClubsEnabled&&wizClubs.length>0)?'block':'none';
+}
 function setWizPType(t){
   wizPType=t;
   const bm=document.getElementById('wiz-ptype-motor'), bs=document.getElementById('wiz-ptype-sail');
@@ -3593,14 +3752,18 @@ function renderWizList(){
     <div class="participant-row" style="padding:8px 12px;margin-bottom:6px;">
       <span style="font-size:18px;">${p.planeType==='motor'?'✈':'🛩'}</span>
       <div class="participant-name">#${i+1} ${esc(p.name)}</div>
-      <div class="participant-badges">${p.youth?'<span class="badge badge-youth">Jugend</span>':''}</div>
+      <div class="participant-badges">
+        ${p.youth?'<span class="badge badge-youth">Jugend</span>':''}
+        ${p.club?`<span class="badge" style="background:rgba(160,130,255,0.18);color:#b8a0ff;border:1px solid rgba(160,130,255,0.3);">🏛 ${esc(p.club)}</span>`:''}
+      </div>
       <button class="btn btn-danger btn-sm" onclick="wizRemoveP(${i})">✕</button>
     </div>`).join('');
 }
 function addWizParticipant(){
   const name=document.getElementById('wiz-pname').value.trim(); if(!name) return;
   if(wizParticipants.find(p=>p.name===name)){toast('Name bereits vorhanden!',true);return;}
-  wizParticipants.push({name,planeType:wizPType,youth:wizPCat==='youth'});
+  const club=wizClubsEnabled?(document.getElementById('wiz-pclub')?.value||''):'';
+  wizParticipants.push({name,planeType:wizPType,youth:wizPCat==='youth',club});
   document.getElementById('wiz-pname').value='';
   renderWizList();
   document.getElementById('wiz-pname').focus();
@@ -3651,8 +3814,16 @@ async function wizNext(){
   if(wizStep===1&&!wizMode){ toast('Bitte eine Option wählen.',true); return; }
   if(wizStep<4){
     if(wizStep===2&&wizDisciplines.size===0){toast('Bitte mindestens eine Disziplin wählen!',true);return;}
+    if(wizStep===2&&wizDisciplines.size===1&&wizDisciplines.has('gluecksrad')){toast('Das Glücksrad alleine ergibt immer 0 Punkte — bitte mindestens eine weitere Disziplin wählen.',true);return;}
     // Warn when leaving step 1 (name/password) without setting a password
     if(wizStep===1 && wizMode==='new'){
+      const nameEl=document.getElementById('wiz-name');
+      if(!nameEl?.value.trim()){
+        toast('Bitte Wettbewerbsname eingeben!',true);
+        if(nameEl){ nameEl.style.outline='2px solid var(--accent-red)'; nameEl.focus(); }
+        return;
+      }
+      if(nameEl) nameEl.style.outline='';
       const pw=document.getElementById('wiz-viewer-pw')?.value||'';
       if(!pw.trim()){
         confirmAction(
@@ -3689,6 +3860,9 @@ async function wizNext(){
     ballonMaxPts:   has('ballon')?(n('wiz-ballon-maxpts')||50):50,
     dropWorstBallon: has('ballon')?wizDropWorstBallon:false,
     fanfareStyle:   document.getElementById('wiz-fanfare')?.value||'',
+    clubsEnabled:   wizClubsEnabled,
+    clubs:          [...wizClubs],
+    clubAverage:    wizClubAverage,
   };
   const name=(document.getElementById('wiz-name')?.value||'').trim();
   const date=document.getElementById('wiz-date')?.value||'';
@@ -3702,7 +3876,7 @@ async function wizNext(){
     if(wizVP&&!isOffline) await api('PUT','/contests/'+contest.id,{viewerPassword:wizVP});
     for(let i=0;i<wizParticipants.length;i++){
       const p=wizParticipants[i];
-      await api('POST','/contests/'+contest.id+'/participants',{name:p.name,number:i+1,youth:!!p.youth,planeType:p.planeType||'sail'}).catch(()=>{});
+      await api('POST','/contests/'+contest.id+'/participants',{name:p.name,number:i+1,youth:!!p.youth,planeType:p.planeType||'sail',club:p.club||''}).catch(()=>{});
     }
     closeWizard();
     if(isOffline){
@@ -4108,6 +4282,29 @@ function applySettings(){
   ['legend-motor-time','legend-sail-time'].forEach((id,i)=>{const el=document.getElementById(id);if(el)el.textContent=formatTime(i===0?settings.limitMotor:settings.limitSail);});
   const sub=document.getElementById('entry-contest-name');
   if(sub) sub.textContent=settings.contestName||currentContest?.name||'';
+  // Club feature
+  const pClubWrap=document.getElementById('p-club-wrap');
+  const pClubSel=document.getElementById('p-club');
+  if(pClubWrap&&pClubSel){
+    const clubs=settings.clubs||[];
+    const prevClub=pClubSel.value;
+    pClubSel.innerHTML='<option value="">— kein Verein —</option>'+clubs.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
+    if(prevClub&&clubs.includes(prevClub)) pClubSel.value=prevClub;
+    pClubWrap.style.display=(settings.clubsEnabled&&clubs.length>0)?'block':'none';
+  }
+  const vSel=document.getElementById('lb-view-select');
+  if(vSel){
+    const hasClubsOpt=!!vSel.querySelector('option[value="clubs"]');
+    if(settings.clubsEnabled&&!hasClubsOpt){
+      const opt=document.createElement('option'); opt.value='clubs'; opt.textContent='Vereinswertung';
+      vSel.appendChild(opt);
+    } else if(!settings.clubsEnabled&&hasClubsOpt){
+      vSel.querySelector('option[value="clubs"]').remove();
+    }
+    if(!settings.clubsEnabled&&currentView==='clubs') currentView='all';
+    vSel.value=currentView;
+  }
+  updateViewLabels();
 }
 
 // ======================== SCORING ========================
@@ -4191,7 +4388,8 @@ async function addParticipant(){
   if(!name){toast('Bitte Name eingeben!',true);return;}
   const num=nextNum();
   try{
-    const p=await api('POST','/contests/'+currentContestId+'/participants',{name,number:num,youth:pCatSelected==='youth',planeType:pTypeSelected});
+    const club=settings.clubsEnabled?(document.getElementById('p-club')?.value||''):'';
+    const p=await api('POST','/contests/'+currentContestId+'/participants',{name,number:num,youth:pCatSelected==='youth',planeType:pTypeSelected,club});
     if(!p._offline){ participants.push(p); toast('Teilnehmer #'+num+' hinzugefügt!'); }
     document.getElementById('p-name').value='';
     renderParticipants(); populatePilotSelect();
@@ -4288,6 +4486,7 @@ function renderParticipants(){
       <div class="participant-badges">
         ${p.planeType==='motor'?'<span class="badge badge-motor">Motor</span>':'<span class="badge badge-sail">Segler</span>'}
         ${p.youth?'<span class="badge badge-youth">Jugend</span>':''}
+        ${p.club&&settings.clubsEnabled?`<span class="badge" style="background:rgba(160,130,255,0.18);color:#b8a0ff;border:1px solid rgba(160,130,255,0.3);">🏛 ${esc(p.club)}</span>`:''}
         ${p.lost?'<span class="badge badge-lost">🛸 Ausgeschieden</span>':''}
       </div>
       <button class="btn btn-ghost btn-sm" onclick="openEditParticipant(${p.id})">✎</button>
@@ -4495,6 +4694,15 @@ function openEditParticipant(id){
   document.getElementById('edit-p-number').value=p.number||'';
   document.getElementById('edit-p-lost').checked=!!p.lost;
   setEditPCat(p.youth?'youth':'senior'); setEditPType(p.planeType||'sail');
+  // Club field
+  const clubWrap=document.getElementById('edit-p-club-wrap');
+  const clubSel=document.getElementById('edit-p-club');
+  if(clubWrap&&clubSel&&settings.clubsEnabled&&(settings.clubs||[]).length>0){
+    clubSel.innerHTML='<option value="">— kein Verein —</option>'+(settings.clubs||[]).map(c=>`<option value="${esc(c)}"${p.club===c?' selected':''}>${esc(c)}</option>`).join('');
+    clubWrap.style.display='block';
+  } else if(clubWrap){
+    clubWrap.style.display='none';
+  }
   document.getElementById('edit-p-overlay').classList.remove('hidden');
   setTimeout(()=>document.getElementById('edit-p-name').focus(),50);
 }
@@ -4509,16 +4717,18 @@ async function saveEditParticipant(){
   if(number&&participants.find(p=>p.number==number&&p.id!==id)){toast('Startnummer '+number+' ist bereits vergeben!',true);return;}
   if(participants.find(p=>p.id===id)?._offline){
     const op=offlineQueue.find(o=>o.tempId===id&&o.method==='POST');
-    if(op){op.body={...op.body,name,number,youth:editPCat==='youth',planeType:editPType,lost};oqSave();}
+    const club=settings.clubsEnabled?(document.getElementById('edit-p-club')?.value||''):'';
+    if(op){op.body={...op.body,name,number,youth:editPCat==='youth',planeType:editPType,lost,club};oqSave();}
     const i=participants.findIndex(p=>p.id===id);
-    if(i!==-1) participants[i]={...participants[i],name,number,youth:editPCat==='youth',planeType:editPType,lost};
+    if(i!==-1) participants[i]={...participants[i],name,number,youth:editPCat==='youth',planeType:editPType,lost,club};
     closeEditParticipant(); renderParticipants(); populatePilotSelect(); renderLeaderboard(); toast('Teilnehmer aktualisiert!');
     return;
   }
+  const club=settings.clubsEnabled?(document.getElementById('edit-p-club')?.value||''):'';
   try{
-    await api('PUT','/contests/'+currentContestId+'/participants/'+id,{name,number,youth:editPCat==='youth',planeType:editPType,lost});
+    await api('PUT','/contests/'+currentContestId+'/participants/'+id,{name,number,youth:editPCat==='youth',planeType:editPType,lost,club});
     const i=participants.findIndex(p=>p.id===id);
-    if(i!==-1) participants[i]={...participants[i],name,number,youth:editPCat==='youth',planeType:editPType,lost};
+    if(i!==-1) participants[i]={...participants[i],name,number,youth:editPCat==='youth',planeType:editPType,lost,club};
     closeEditParticipant(); renderParticipants(); populatePilotSelect(); renderLeaderboard(); toast('Teilnehmer aktualisiert!');
   }catch(e){toast('Fehler!',true);}
 }
@@ -5350,7 +5560,18 @@ function applyTensionBlur(){
 }
 
 // ======================== LEADERBOARD ========================
-function toggleView(){ currentView=currentView==='all'?'youth':'all'; document.getElementById('view-label').textContent=currentView==='all'?'Jugendwertung':'Gesamtwertung'; document.getElementById('lb-subtitle').textContent=currentView==='all'?'Gesamtwertung aller Teilnehmer':'Jugendwertung'; document.getElementById('lb-mode-chip').textContent=currentView==='all'?'Gesamt':'Jugend'; renderLeaderboard(); }
+function updateViewLabels(){
+  const subtitle={all:'Gesamtwertung aller Teilnehmer',youth:'Jugendwertung',clubs:'Vereinswertung'}[currentView]||'';
+  const chip={all:'Gesamt',youth:'Jugend',clubs:'Vereine'}[currentView]||'Gesamt';
+  const ls=document.getElementById('lb-subtitle'); if(ls) ls.textContent=subtitle;
+  const mc=document.getElementById('lb-mode-chip'); if(mc) mc.textContent=chip;
+  const vSel=document.getElementById('lb-view-select'); if(vSel) vSel.value=currentView;
+  const fsBtn=document.getElementById('lb-fs-btn'); if(fsBtn) fsBtn.style.display=currentView==='all'?'':'none';
+}
+function setView(v){
+  currentView=v;
+  updateViewLabels(); renderLeaderboard();
+}
 
 // Returns the discipline currently being scored:
 // first disc that isn't complete yet, or last scoring disc if all done
@@ -5438,6 +5659,7 @@ function renderLeaderboard(){
     el.innerHTML='<div class="empty"><div class="empty-icon">🏁</div>Kein Wettbewerb ausgewählt.<br><br>'+(currentUser?'<button class="btn btn-gold" onclick="showPage(\'contests\')">Wettbewerb wählen</button>':'<a class="btn btn-ghost" href="/welcome">🏁 Wettbewerb auswählen</a>')+'</div>';
     return;
   }
+  if(currentView==='clubs'){ renderClubRanking(); renderStartOrder(); return; }
   const rounds=settings.rounds||3, rel=participants.filter(p=>currentView!=='youth'||p.youth);
   const discs=getDiscs();
   const precRounds=rounds, limboRounds=settings.limboRounds||3, ballonRoundsLB=settings.ballonRounds||1;
@@ -5596,7 +5818,101 @@ function renderLeaderboard(){
   if(pdfBtn) pdfBtn.style.display=(currentContest&&entries.length>0)?'inline-flex':'none';
 }
 
+function computePilotTotal(p){
+  const discs=getDiscs();
+  const limboR=settings.limboRounds||3, precR=settings.rounds||3, ballonR=settings.ballonRounds||1;
+  let total=0;
+  discs.filter(d=>d!=='gluecksrad').forEach(disc=>{
+    const dr=disc==='limbo'?limboR:disc==='ballon'?ballonR:precR;
+    const pe=entries.filter(e=>e.pilotId===p.id&&(e.discipline||'precision')===disc);
+    let cnt=[...pe];
+    if(dropWorstActive(disc)&&pe.length>=dr){const wi=pe.reduce((bi,e,i)=>e.total<pe[bi].total?i:bi,0);cnt=pe.filter((_,i)=>i!==wi);}
+    total+=cnt.reduce((s,e)=>s+e.total,0);
+  });
+  if(discs.includes('gluecksrad')){
+    const grE=entries.find(e=>e.pilotId===p.id&&e.discipline==='gluecksrad');
+    if(grE) total=grE.total;
+  }
+  return total;
+}
+
+let _clubDetailRows=[];
+function renderClubRanking(){
+  const el=document.getElementById('lb-container'); if(!el) return;
+  const avgMode=settings.clubAverage||false;
+  const clubMap={};
+  participants.filter(p=>!p.lost).forEach(p=>{
+    const key=(p.club&&p.club.trim())||'__ohne__';
+    const label=(p.club&&p.club.trim())||'Ohne Verein';
+    if(!clubMap[key]) clubMap[key]={label,total:0,count:0,members:[]};
+    const pt=computePilotTotal(p);
+    clubMap[key].total+=pt; clubMap[key].count++;
+    clubMap[key].members.push({name:p.name,youth:p.youth,total:pt});
+  });
+  _clubDetailRows=Object.values(clubMap).map(c=>({
+    ...c, score: avgMode&&c.count>0 ? c.total/c.count : c.total
+  })).sort((a,b)=>b.score-a.score);
+  const pdfBtn=document.getElementById('lb-pdf-btn');
+  if(pdfBtn) pdfBtn.style.display=_clubDetailRows.length>0?'inline-flex':'none';
+  if(!_clubDetailRows.length){
+    el.innerHTML='<div class="empty"><div class="empty-icon">🏛</div>Noch keine Teilnehmer.</div>';
+    return;
+  }
+  const medals=['🥇','🥈','🥉'];
+  const modeHint=avgMode?'Mittelwert der Teilnehmerpunkte':'Summe aller Teilnehmerpunkte';
+  el.innerHTML=`<div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">🏛 Vereinswertung — ${modeHint}</div>
+  <table class="leaderboard-table"><thead><tr>
+    <th style="width:36px;">#</th>
+    <th>Verein</th>
+    <th style="text-align:center;">Piloten</th>
+    <th style="text-align:right;">${avgMode?'∅ Punkte':'Σ Punkte'}</th>
+  </tr></thead><tbody>
+  ${_clubDetailRows.map((row,i)=>{
+    const rank=_clubDetailRows.filter(r=>r.score>row.score).length+1;
+    const tieRank=rank<=3?medals[rank-1]:(row.isTie?`${rank}=`:`${rank}`);
+    const rc=rank===1?'rank-1':rank===2?'rank-2':rank===3?'rank-3':'rank-other';
+    const scoreDisplay=avgMode?row.score.toFixed(1):row.score;
+    const isOhne=row.label==='Ohne Verein';
+    return `<tr data-rank="${rank}" data-clabel="${esc(row.label)}" onclick="openClubDetail(${i})" style="cursor:pointer;" title="Details anzeigen">
+      <td class="rank-cell ${rc}">${tieRank}</td>
+      <td>
+        <span class="pilot-name" style="${isOhne?'color:var(--text-muted);font-style:italic;':''}">
+          ${isOhne?'':'🏛 '}${esc(row.label)}
+        </span>
+      </td>
+      <td style="text-align:center;color:var(--text-muted);">${row.count}</td>
+      <td><span class="score-big">${scoreDisplay}</span></td>
+    </tr>`;
+  }).join('')}
+  </tbody></table>`;
+}
+function openClubDetail(idx){
+  const row=_clubDetailRows[idx]; if(!row) return;
+  const avgMode=settings.clubAverage||false;
+  const medals=['🥇','🥈','🥉'];
+  const rank=_clubDetailRows.filter(r=>r.score>row.score).length+1;
+  const rankDisplay=rank<=3?medals[rank-1]:String(rank);
+  const isOhne=row.label==='Ohne Verein';
+  document.getElementById('cd-rank').textContent=rankDisplay;
+  document.getElementById('cd-name').textContent=(isOhne?'':'🏛 ')+row.label;
+  document.getElementById('cd-score').textContent=avgMode?row.score.toFixed(1):row.score;
+  document.getElementById('cd-score-lbl').textContent=avgMode?'∅ Punkte':'Σ Punkte';
+  document.getElementById('cd-count').textContent=row.count;
+  const sorted=[...row.members].sort((a,b)=>b.total-a.total);
+  document.getElementById('cd-members').innerHTML=sorted.map((m,i)=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--sky-border);">
+      <span style="font-family:var(--font-head);font-size:15px;font-weight:800;color:var(--text-dim);width:22px;text-align:center;">${i+1}</span>
+      <div style="flex:1;font-size:14px;font-weight:600;">${esc(m.name)}${m.youth?` <span class="badge badge-youth" style="font-size:10px;padding:1px 5px;">Jugend</span>`:''}</div>
+      <span style="font-family:var(--font-head);font-size:18px;font-weight:800;color:var(--accent2);">${m.total}P</span>
+    </div>`).join('');
+  document.getElementById('club-detail-overlay').classList.remove('hidden');
+}
+function closeClubDetail(){
+  document.getElementById('club-detail-overlay').classList.add('hidden');
+}
+
 function exportLeaderboardPDF(){
+  if(currentView==='clubs'){ exportClubPDF(); return; }
   const discs=getDiscs();
   const precRounds=settings.rounds||3, limboRounds=settings.limboRounds||3, ballonRounds=settings.ballonRounds||1;
   const rel=participants.filter(p=>currentView!=='youth'||p.youth);
@@ -5724,6 +6040,119 @@ footer{margin-top:10px;border-top:1px solid #ddd;padding-top:5px;display:flex;ju
 </table>
 <footer>
   <span>${sorted.length} Teilnehmer · ${discs.map(d=>discNames[d]).join(', ')}</span>
+  <span>Ergebnisse sind endgültig</span>
+</footer>
+<script>window.onload=()=>{window.print()}<\/script>
+</body></html>`;
+
+  const w=window.open('','_blank','width=900,height=700');
+  if(w){w.document.write(doc);w.document.close();}
+  else toast('Popup-Blocker aktiv — Popups für diese Seite erlauben.',true);
+}
+
+function exportClubPDF(){
+  if(!_clubDetailRows.length){toast('Keine Vereinsdaten vorhanden.',true);return;}
+  const avgMode=settings.clubAverage||false;
+  const medals=['🥇','🥈','🥉'];
+  const now=new Date().toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'});
+  const modeHint=avgMode?'Mittelwert der Teilnehmerpunkte':'Summe aller Teilnehmerpunkte';
+  const meta=[currentContest?.date,currentContest?.location,'Vereinswertung'].filter(Boolean).join(' · ');
+
+  const summaryRows=_clubDetailRows.map((row,i)=>{
+    const rank=_clubDetailRows.filter(r=>r.score>row.score).length+1;
+    const tieCount=_clubDetailRows.filter(r=>r.score===row.score).length;
+    const rankLabel=rank<=3?medals[rank-1]:(tieCount>1?`${rank}=`:`${rank}.`);
+    const scoreDisplay=avgMode?row.score.toFixed(1):row.score;
+    const isOhne=row.label==='Ohne Verein';
+    const rankColor=rank===1?'color:#b8860b':rank===2?'color:#888':rank===3?'color:#9a6b3a':'';
+    const rowBg=i%2===1?'background:#f9f9f9':'';
+    return `<tr>
+      <td class="s-rank" style="${rankColor}">${rankLabel}</td>
+      <td class="s-name">${isOhne?`<em>${row.label}</em>`:row.label}</td>
+      <td class="s-ctr">${row.count}</td>
+      <td class="s-total">${scoreDisplay}</td>
+    </tr>`;
+  }).join('');
+
+  const detailSections=_clubDetailRows.map(row=>{
+    const rank=_clubDetailRows.filter(r=>r.score>row.score).length+1;
+    const rankLabel=rank<=3?medals[rank-1]:`${rank}.`;
+    const scoreDisplay=avgMode?row.score.toFixed(1):row.score;
+    const memberRows=[...row.members].sort((a,b)=>b.total-a.total).map((m,i)=>`
+      <tr>
+        <td class="m-pos">${i+1}.</td>
+        <td class="m-name">${m.name}${m.youth?' <span class="badge-j">J</span>':''}</td>
+        <td class="m-score">${m.total}</td>
+      </tr>`).join('');
+    return `<div class="club-section">
+      <div class="club-header">
+        <span class="ch-rank">${rankLabel}</span>
+        <span class="ch-name">${row.label}</span>
+        <span class="ch-score">${scoreDisplay} Pkt.</span>
+      </div>
+      <table class="member-table">
+        <colgroup><col style="width:28px"><col><col style="width:64px"></colgroup>
+        <tbody>${memberRows}</tbody>
+      </table>
+    </div>`;
+  }).join('');
+
+  const doc=`<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8">
+<title>Vereinswertung – ${currentContest?.name||''}</title>
+<style>
+@page{size:A4 portrait;margin:1.8cm 1.8cm}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,Helvetica,sans-serif;color:#000;background:#fff;font-size:10.5px;line-height:1.4}
+header{border-bottom:2px solid #333;padding-bottom:8px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:flex-end}
+header h1{font-size:18px;font-weight:900}
+header .meta{font-size:9.5px;color:#555;margin-top:2px}
+header .date{font-size:9px;color:#777;text-align:right}
+h2{font-size:13px;font-weight:700;margin:18px 0 8px;padding-bottom:4px;border-bottom:1.5px solid #ccc;letter-spacing:0.03em}
+table{width:100%;border-collapse:collapse;table-layout:fixed}
+thead tr{border-bottom:2px solid #333}
+th{padding:5px 8px;font-size:9px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;white-space:nowrap;border-bottom:2px solid #333;vertical-align:bottom}
+/* Summary table cells */
+.s-rank{text-align:center;font-size:13px;font-weight:900;vertical-align:middle;padding:5px 4px;border-bottom:1px solid #e0e0e0;line-height:1}
+.s-name{font-weight:600;font-size:11px;vertical-align:middle;padding:5px 8px;border-bottom:1px solid #e0e0e0}
+.s-ctr{text-align:center;color:#555;font-size:10.5px;vertical-align:middle;padding:5px 8px;border-bottom:1px solid #e0e0e0}
+.s-total{text-align:center;font-weight:900;font-size:13px;border-left:1.5px solid #999;vertical-align:middle;padding:5px 8px;border-bottom:1px solid #e0e0e0}
+tbody tr:nth-child(even) td,.s-rank:nth-child(even),.s-name:nth-child(even){background:#f9f9f9}
+tbody tr:nth-child(even) .s-rank,tbody tr:nth-child(even) .s-name,tbody tr:nth-child(even) .s-ctr,tbody tr:nth-child(even) .s-total{background:#f9f9f9}
+tbody tr:first-child .s-rank,tbody tr:first-child .s-name,tbody tr:first-child .s-ctr,tbody tr:first-child .s-total{border-top:1.5px solid #c9a227}
+tbody tr:nth-child(2) .s-rank,tbody tr:nth-child(2) .s-name,tbody tr:nth-child(2) .s-ctr,tbody tr:nth-child(2) .s-total{border-top:1px solid #aaa}
+tbody tr:nth-child(3) .s-rank,tbody tr:nth-child(3) .s-name,tbody tr:nth-child(3) .s-ctr,tbody tr:nth-child(3) .s-total{border-top:1px solid #a07850}
+/* Club detail header */
+.club-section{margin-bottom:14px;break-inside:avoid}
+.club-header{display:flex;align-items:center;gap:6px;padding:5px 8px;background:#f0f0f0;border-left:3px solid #c9a227;margin-bottom:0}
+.ch-rank{font-size:13px;font-weight:900;line-height:1;flex-shrink:0}
+.ch-name{font-size:11px;font-weight:700;flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.ch-score{font-size:11px;font-weight:900;color:#333;white-space:nowrap;flex-shrink:0}
+/* Member table cells */
+.member-table{width:100%;border-collapse:collapse;table-layout:fixed}
+.m-pos{text-align:center;color:#888;font-size:9px;font-weight:600;vertical-align:middle;padding:3px 4px;border-bottom:1px solid #eee}
+.m-name{font-size:10px;font-weight:500;vertical-align:middle;padding:3px 8px;border-bottom:1px solid #eee}
+.m-score{text-align:center;font-size:10px;font-weight:700;color:#333;border-left:1px solid #ddd;vertical-align:middle;padding:3px 8px;border-bottom:1px solid #eee}
+.member-table tbody tr:nth-child(even) td{background:#fbfbfb}
+.badge-j{display:inline-block;font-size:7.5px;background:#f0eaff;color:#6600bb;padding:1px 3px;border-radius:2px;font-weight:700;vertical-align:middle;line-height:1.5}
+footer{margin-top:10px;border-top:1px solid #ddd;padding-top:5px;display:flex;justify-content:space-between;font-size:9px;color:#999}
+@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+</style></head><body>
+<header>
+  <div><h1>🏛 ${currentContest?.name||'Wettbewerb'}</h1><div class="meta">${meta}</div><div class="meta" style="margin-top:3px;">${modeHint}</div></div>
+  <div class="date">AeroScore<br>Gedruckt: ${now}</div>
+</header>
+<h2>Vereinsrangliste</h2>
+<table>
+  <colgroup><col style="width:44px"><col><col style="width:64px"><col style="width:80px"></colgroup>
+  <thead><tr>
+    <th style="text-align:center">Rang</th><th>Verein</th><th style="text-align:center">Piloten</th><th style="text-align:center">${avgMode?'∅ Punkte':'Σ Punkte'}</th>
+  </tr></thead>
+  <tbody>${summaryRows}</tbody>
+</table>
+<h2>Vereinsdetails</h2>
+${detailSections}
+<footer>
+  <span>${_clubDetailRows.length} Vereine · ${_clubDetailRows.reduce((s,r)=>s+r.count,0)} Piloten gesamt</span>
   <span>Ergebnisse sind endgültig</span>
 </footer>
 <script>window.onload=()=>{window.print()}<\/script>
@@ -6325,6 +6754,41 @@ async function adminResetAll(){
 // ======================== CONTEST SETTINGS ========================
 let csDropWorst=false,csDropWorstLimbo=false,csDropWorstBallon=false,csStatus='active';
 let _csFullContest=null;
+let csClubsEnabled=false, csClubs=[], csClubAverage=false;
+function setCSClubsEnabled(v){
+  csClubsEnabled=v;
+  const on=document.getElementById('cs-clubs-on'),off=document.getElementById('cs-clubs-off');
+  if(on) on.className='toggle-opt'+(v?' active-motor':'');
+  if(off) off.className='toggle-opt'+(!v?' active-motor':'');
+  const avgW=document.getElementById('cs-club-avg-wrap');
+  const listW=document.getElementById('cs-club-list-wrap');
+  if(avgW) avgW.style.display=v?'block':'none';
+  if(listW) listW.style.display=v?'block':'none';
+}
+function setCSClubAverage(v){
+  csClubAverage=v;
+  const sb=document.getElementById('cs-club-sum-btn'),ab=document.getElementById('cs-club-avg-btn');
+  if(sb) sb.className='toggle-opt'+(!v?' active-motor':'');
+  if(ab) ab.className='toggle-opt'+(v?' active-motor':'');
+}
+function addCSClub(){
+  const inp=document.getElementById('cs-club-input');
+  const name=(inp?.value||'').trim();
+  if(!name){toast('Bitte Vereinsname eingeben!',true);return;}
+  if(csClubs.includes(name)){toast('Verein bereits vorhanden!',true);return;}
+  csClubs.push(name); if(inp) inp.value='';
+  renderCSClubList();
+}
+function removeCSClub(idx){ csClubs.splice(idx,1); renderCSClubList(); }
+function renderCSClubList(){
+  const el=document.getElementById('cs-club-list'); if(!el) return;
+  if(!csClubs.length){el.innerHTML='<div style="font-size:12px;color:var(--text-dim);padding:4px 0;">Noch keine Vereine.</div>';return;}
+  el.innerHTML=csClubs.map((name,i)=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--sky-border);">
+      <span style="flex:1;font-size:13px;">🏛 ${esc(name)}</span>
+      <button class="btn btn-ghost btn-sm" onclick="removeCSClub(${i})" style="color:var(--accent-red);">✕</button>
+    </div>`).join('');
+}
 function setCSStatus(s){ csStatus=s; ['active','finished','archived'].forEach(st=>{ const el=document.getElementById('cs-st-'+st); if(el) el.className='toggle-opt'+(st===s?' active-motor':''); }); }
 function setCSDropWorst(v){ csDropWorst=v; document.getElementById('cs-drop-on').className='toggle-opt'+(v?' active-motor':''); document.getElementById('cs-drop-off').className='toggle-opt'+(!v?' active-motor':''); }
 function setCSDropWorstLimbo(v){ csDropWorstLimbo=v; const on=document.getElementById('cs-drop-limbo-on'),off=document.getElementById('cs-drop-limbo-off'); if(on) on.className='toggle-opt'+(v?' active-motor':''); if(off) off.className='toggle-opt'+(!v?' active-motor':''); }
@@ -6417,6 +6881,11 @@ async function openContestSettings(id){
     const hasGR=(s.disciplines||[]).includes('gluecksrad');
     const csGRSec=document.getElementById('cs-gluecksrad-section');
     if(csGRSec) csGRSec.style.display=hasGR?'block':'none';
+    // Clubs section
+    csClubs=[...(s.clubs||[])]; csClubAverage=!!s.clubAverage;
+    setCSClubsEnabled(!!s.clubsEnabled);
+    setCSClubAverage(csClubAverage);
+    renderCSClubList();
     // Sharing: only show if current user is owner
     const sharingSection=document.getElementById('cs-sharing-section');
     const isOwner = access.ownerId === currentUser?.userId;
@@ -6617,6 +7086,9 @@ async function saveContestSettings(){
     dropWorst:csDropWorst,
     tensionMode:csTensionMode,
     fanfareStyle:document.getElementById('cs-fanfare')?.value||'',
+    clubsEnabled: csClubsEnabled,
+    clubs: [...csClubs],
+    clubAverage: csClubAverage,
     ...(hasLimbo && {
       limboRounds: parseInt(document.getElementById('cs-limbo-rounds')?.value)||3,
       limboLevels: csLimboLevels.map(l=>({height:l.height,points:l.points})),
@@ -7040,7 +7512,7 @@ function fsRender(){
   const cName=document.getElementById('fs-contest-name');
   const vLabel=document.getElementById('fs-view-label');
   if(cName) cName.textContent=currentContest?.name||'';
-  if(vLabel) vLabel.textContent=currentView==='youth'?'Jugendwertung':'Gesamtwertung';
+  if(vLabel) vLabel.textContent=currentView==='youth'?'Jugendwertung':currentView==='clubs'?'Vereinswertung (Vollbild zeigt Gesamt)':'Gesamtwertung';
 
   const discs=getDiscs().filter(d=>d!=='gluecksrad');
   const hasOrder=discs.length>0&&participants.filter(p=>!p.lost).length>0&&currentContest?.status!=='finished';
@@ -7086,7 +7558,8 @@ function fsRender(){
   const _fsTension=(()=>{
     const sd=getDiscs().filter(d=>d!=='gluecksrad');
     const totalR=sd.reduce((s,d)=>s+(d==='ballon'?(settings.ballonRounds||1):d==='limbo'?(settings.limboRounds||3):(settings.rounds||3)),0);
-    const rel=participants.filter(p=>currentView!=='youth'||p.youth).filter(p=>!p.lost);
+    const _fsv=currentView==='clubs'?'all':currentView;
+    const rel=participants.filter(p=>_fsv!=='youth'||p.youth).filter(p=>!p.lost);
     if(!settings.tensionMode||!rel.length||!totalR) return false;
     const minE=Math.min(...rel.map(p=>entries.filter(e=>e.pilotId===p.id&&e.discipline!=='gluecksrad').length));
     const allDone=rel.every(p=>entries.filter(e=>e.pilotId===p.id&&e.discipline!=='gluecksrad').length>=totalR);
@@ -7146,7 +7619,8 @@ window.addEventListener('resize',()=>{
 function fsRenderLeaderboard(){
   const discs=getDiscs();
   const precR=settings.rounds||3, limboR=settings.limboRounds||3, ballonR=settings.ballonRounds||1;
-  const rel=participants.filter(p=>currentView!=='youth'||p.youth);
+  const fsView=currentView==='clubs'?'all':currentView;
+  const rel=participants.filter(p=>fsView!=='youth'||p.youth);
   const medals=['🥇','🥈','🥉'];
   const discColors={precision:'var(--motor)',limbo:'var(--sail)',ballon:'#ff8c00',gluecksrad:'var(--gold)'};
   const discNames={precision:'Präzision',limbo:'Limbo',ballon:'Ballon',gluecksrad:'GR'};
@@ -7526,7 +8000,8 @@ function showPodium(){
   },30000);
 }
 
-let _prevLbRanks = {};  // pilotId → rank for normal LB animation
+let _prevLbRanks = {};   // pilotId → rank for normal LB animation
+let _prevClubRanks = {}; // club label → rank for club LB animation
 let _fsPrevFinish = {id:null, finished:false};
 const _origRenderLB=renderLeaderboard;
 renderLeaderboard=function(){
@@ -7547,9 +8022,24 @@ renderLeaderboard=function(){
       row.style.animation=rank<prev?'lbSlideUp 0.6s cubic-bezier(0.34,1.56,0.64,1)':'lbSlideDown 0.4s ease-out';
     }
   });
-  // Store ranks
+  // Store pilot ranks
   document.querySelectorAll('#lb-container [data-pid]').forEach(row=>{
     _prevLbRanks[parseInt(row.dataset.pid)]=parseInt(row.dataset.rank)||99;
+  });
+  // Animate rank changes in club leaderboard
+  document.querySelectorAll('#lb-container [data-clabel]').forEach(row=>{
+    const label=row.dataset.clabel;
+    const rank=parseInt(row.dataset.rank)||99;
+    const prev=_prevClubRanks[label];
+    if(prev!==undefined&&prev!==rank){
+      row.style.animation='none';
+      row.offsetHeight;
+      row.style.animation=rank<prev?'lbSlideUp 0.6s cubic-bezier(0.34,1.56,0.64,1)':'lbSlideDown 0.4s ease-out';
+    }
+  });
+  // Store club ranks
+  document.querySelectorAll('#lb-container [data-clabel]').forEach(row=>{
+    _prevClubRanks[row.dataset.clabel]=parseInt(row.dataset.rank)||99;
   });
 };
 

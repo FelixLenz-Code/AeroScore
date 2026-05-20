@@ -1028,13 +1028,13 @@ app.get('/api/contests/:cid/participants', requireViewerOrSession, (req,res) => 
 });
 app.post('/api/contests/:cid/participants', requireContestAccess, (req,res) => {
   const c = req.contest, db = req.db;
-  const { name, number, youth, planeType } = req.body;
+  const { name, number, youth, planeType, club } = req.body;
   if (!name) return res.status(400).json({ error:'Name fehlt' });
   const existing = c.participants.find(p => p.name===name);
   // Return existing participant so offline sync can remap temp IDs
   if (existing) return res.status(409).json({ error:'Name bereits vorhanden', existing });
   const id = c._nextId.p++;
-  const p = { id, name, number, youth:!!youth, planeType:planeType||'sail', lost:false };
+  const p = { id, name, number, youth:!!youth, planeType:planeType||'sail', lost:false, ...(club!=null&&{club}) };
   c.participants.push(p);
   writeDB(db); broadcast('participants', c.id); res.json(p);
 });
@@ -1042,12 +1042,13 @@ app.put('/api/contests/:cid/participants/:id', requireContestAccess, (req,res) =
   const c = req.contest, db = req.db;
   const idx = c.participants.findIndex(p => p.id===parseInt(req.params.id));
   if (idx===-1) return res.status(404).json({ error:'Nicht gefunden' });
-  const { name, number, youth, planeType, lost } = req.body;
+  const { name, number, youth, planeType, lost, club } = req.body;
   if (name && c.participants.find(p => p.name===name && p.id!==parseInt(req.params.id)))
     return res.status(409).json({ error:'Name bereits vorhanden' });
   c.participants[idx] = { ...c.participants[idx],
     ...(name&&{name}), ...(number!=null&&{number}),
-    ...(youth!=null&&{youth:!!youth}), ...(planeType&&{planeType}), ...(lost!=null&&{lost:!!lost}) };
+    ...(youth!=null&&{youth:!!youth}), ...(planeType&&{planeType}), ...(lost!=null&&{lost:!!lost}),
+    ...(club!=null&&{club}) };
   writeDB(db); broadcast('participants', c.id); res.json({ ok:true });
 });
 app.delete('/api/contests/:cid/participants/:id', requireContestAccess, (req,res) => {
