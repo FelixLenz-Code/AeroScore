@@ -5,6 +5,14 @@
 
 **Wettbewerbssoftware für Modellflugvereine** — Teilnehmer verwalten, Wertungen eintragen, Ergebnisse live auf dem Beamer präsentieren.
 
+<p align="center">
+  <a href="https://www.youtube.com/watch?v=Wp0oGc_fj10">
+    <img src="https://img.youtube.com/vi/Wp0oGc_fj10/maxresdefault.jpg" alt="AeroScore Demo-Video ansehen" width="700">
+  </a>
+  <br>
+  <a href="https://www.youtube.com/watch?v=Wp0oGc_fj10">▶ Demo-Video auf YouTube ansehen</a>
+</p>
+
 ---
 
 ## Inhalt
