@@ -30,6 +30,9 @@
 - **Ballonstechen** — Mehrere Versuche pro Runde, konfigurierbare Maximalpunktzahl
 - **Glücksrad** — Multiplikator auf die Gesamtpunktzahl aller anderen Disziplinen
 
+<img src="Screenshots/Disziplinen.png" alt="disziplinen" width="400"/>
+
+
 ### Wertung & Rangliste
 - Echtzeit-Leaderboard mit Live-Update per SSE (Server-Sent Events)
 - Dense Ranking (sportliche Wertung bei Gleichstand)
@@ -38,6 +41,9 @@
 - Neuberechnung aller Einträge bei nachträglicher Einstellungsänderung
 - **Vollbild-/Beamer-Modus** mit animierter Rangliste und Startreihenfolge
 
+<img src="Screenshots/Vollbild.png" alt="Vollbild" width="700"/>
+<img src="Screenshots/Animation.png" alt="Animation" width="700"/>
+
 ### Verwaltung
 - Mehrere Wettbewerbe parallel verwaltbar
 - Wettbewerb duplizieren (Einstellungen + Teilnehmer übernehmen)
@@ -45,6 +51,8 @@
 - Teilnehmer und Einträge im Mehrfach-Auswahl-Modus löschen
 - Druckbare Startliste
 - Abgeschlossene Wettbewerbe werden nach 14 Tagen automatisch archiviert
+
+<img src="Screenshots/Teilnehmereintrag.png" alt="Teilnehmereintrag" width="700"/>
 
 ### Besucher-Ansicht
 - Öffentliche Willkommensseite (`/welcome`) mit Live-Leaderboard
