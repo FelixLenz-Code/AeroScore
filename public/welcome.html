@@ -207,7 +207,7 @@ async function loadWelcomeMsg(){
     const logoImg = document.getElementById('welcome-club-logo');
     const planeIcon = document.getElementById('hero-plane-icon');
     if(d.hasLogo){
-      if(logoImg){ logoImg.src = '/api/config/logo?t=' + Date.now(); logoImg.style.display = 'block'; }
+      if(logoImg){ logoImg.src = '/api/config/logo?t=' + Date.now(); logoImg.style.display = 'inline-block'; }
       if(planeIcon) planeIcon.style.display = 'none';
     }
     renderAnnouncements(d);

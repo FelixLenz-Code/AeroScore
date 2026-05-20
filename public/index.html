@@ -3785,7 +3785,7 @@ async function wizNext(){
       const contest=await api('POST','/contests',{name:importName,date:data.date||'',settings:data.settings||{}});
       const pidMap={};
       for(const p of (data.participants||[])){
-        try{ const np=await api('POST','/contests/'+contest.id+'/participants',{name:p.name,number:p.number,youth:p.youth,planeType:p.planeType||'sail'}); pidMap[p.id]=np.id; }catch{}
+        try{ const np=await api('POST','/contests/'+contest.id+'/participants',{name:p.name,number:p.number,youth:p.youth,planeType:p.planeType||'sail',...(p.club!=null&&{club:p.club})}); pidMap[p.id]=np.id; }catch{}
       }
       for(const e of (data.entries||[])){
         const newPid=pidMap[e.pilotId]; if(!newPid) continue;
@@ -4613,12 +4613,14 @@ function printStartList(){
   const discs=getDiscs();
   const discLabel={'precision':'Präzision','limbo':'Limbo','ballon':'Ballon','gluecksrad':'Glücksrad'};
   const discStr=discs.map(d=>discLabel[d]||d).join(', ');
+  const showClub=!!(settings.clubsEnabled);
   const rows=sorted.map(p=>`
     <tr class="${p.lost?'lost':''}">
       <td class="nr">${p.number||'—'}</td>
       <td class="name">${p.name}${p.lost?' <span class="badge-lost">Ausgeschieden</span>':''}</td>
       <td class="cat">${p.youth?'Jugend':'Senior'}</td>
       <td class="plane">${p.planeType==='motor'?'Motor':'Segler'}</td>
+      ${showClub?`<td class="club">${p.club?esc(p.club):'—'}</td>`:''}
       <td class="sig"></td>
     </tr>`).join('');
   const html=`<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8">
@@ -4643,6 +4645,7 @@ td.nr{font-family:'Barlow Condensed',Arial,sans-serif;font-weight:800;font-size:
 td.name{font-weight:600;}
 td.cat{width:68px;font-size:9pt;color:#555;}
 td.plane{width:62px;font-size:9pt;color:#555;}
+td.club{font-size:9pt;color:#555;}
 td.sig{width:130px;border-bottom:1px solid #aaa;position:relative;}
 td.sig::after{content:'Unterschrift';position:absolute;bottom:1px;left:4px;font-size:7pt;color:#aaa;}
 .badge-lost{display:inline-block;background:#fee2e2;color:#b91c1c;border-radius:3px;font-size:8pt;font-weight:600;padding:1px 5px;margin-left:6px;vertical-align:middle;}
@@ -4653,7 +4656,7 @@ td.sig::after{content:'Unterschrift';position:absolute;bottom:1px;left:4px;font-
 ${meta?`<div class="meta">${meta}</div>`:''}
 <div class="discs">Disziplinen: ${discStr}</div>
 <table>
-  <thead><tr><th style="width:38px;">#</th><th>Name</th><th>Wertung</th><th>Typ</th><th style="width:130px;">Unterschrift</th></tr></thead>
+  <thead><tr><th style="width:38px;">#</th><th>Name</th><th>Wertung</th><th>Typ</th>${showClub?'<th>Verein</th>':''}<th style="width:130px;">Unterschrift</th></tr></thead>
   <tbody>${rows}</tbody>
 </table>
 <div class="footer">Erstellt am ${new Date().toLocaleDateString('de-DE')} · ${sorted.filter(p=>!p.lost).length} Teilnehmer</div>
@@ -5959,6 +5962,7 @@ function exportLeaderboardPDF(){
     return count>1?`${rank}=`:`${rank}.`;
   }
 
+  const showClub=!!(settings.clubsEnabled);
   const thDiscs=discs.map(d=>`<th class="num">${discNames[d]||d}</th>`).join('');
   const rows=sorted.map((p,i)=>{
     const sc=scores[p.id];
@@ -5982,6 +5986,7 @@ function exportLeaderboardPDF(){
       <td class="rank">${rank}</td>
       <td class="ctr small">#${p.number||'—'}</td>
       <td class="name">${p.name}${p.youth?' <sup>J</sup>':''}</td>
+      ${showClub?`<td class="club">${p.club||'—'}</td>`:''}
       <td class="ctr small">${p.planeType==='motor'?'Motor':'Segler'}</td>
       ${tdDiscs}
       <td class="total">${sc.grandTotal}</td>
@@ -6011,6 +6016,7 @@ td.rank{text-align:center;font-size:13px;font-weight:900;width:36px}
 td.ctr{text-align:center;color:#555}
 td.small{font-size:9.5px}
 td.name{font-weight:600;font-size:11px}
+td.club{font-size:9.5px;color:#555}
 td.num{text-align:center}
 td.total{text-align:center;font-weight:900;font-size:13px;border-left:1.5px solid #999}
 td.dim{text-align:center;color:#ccc}
@@ -6032,7 +6038,7 @@ footer{margin-top:10px;border-top:1px solid #ddd;padding-top:5px;display:flex;ju
 </header>
 <table>
   <thead><tr>
-    <th>Rang</th><th>#</th><th>Name</th><th>Typ</th>
+    <th>Rang</th><th>#</th><th>Name</th>${showClub?'<th>Verein</th>':''}<th>Typ</th>
     ${thDiscs}
     <th class="total">Gesamt</th>
   </tr></thead>
@@ -6602,7 +6608,7 @@ async function doImportConfirm(){
     for(const p of (data.participants||[])){
       try{
         const np=await api('POST','/contests/'+contest.id+'/participants',{
-          name:p.name,number:p.number,youth:p.youth,planeType:p.planeType||'sail'
+          name:p.name,number:p.number,youth:p.youth,planeType:p.planeType||'sail',...(p.club!=null&&{club:p.club})
         });
         pidMap[p.id]=np.id;
       }catch{}
@@ -6653,7 +6659,7 @@ async function importParticipants(input){
         for(const p of toImport){
           try{
             const np=await api('POST','/contests/'+currentContestId+'/participants',{
-              name:p.name, number:num++, youth:!!p.youth, planeType:p.planeType||'sail'
+              name:p.name, number:num++, youth:!!p.youth, planeType:p.planeType||'sail',...(p.club!=null&&{club:p.club})
             });
             participants.push(np); ok++;
           }catch{}
