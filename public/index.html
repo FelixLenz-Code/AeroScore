@@ -1085,7 +1085,7 @@
     color: var(--text); margin-bottom: 8px;
   }
   .confirm-box p { font-size: 14px; color: var(--text-muted); margin-bottom: 22px; line-height: 1.5; }
-  .confirm-btns { display: flex; gap: 10px; justify-content: center; }
+  .confirm-btns { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
 
 
 /* Extra: overlay base, modal-box, checkbox-label, section-label */
@@ -1127,7 +1127,7 @@
 .confirm-box .confirm-icon { font-size:32px; margin-bottom:10px; }
 .confirm-box h3 { font-family:var(--font-head); font-size:20px; font-weight:800; color:var(--text); margin-bottom:8px; }
 .confirm-box p { font-size:14px; color:var(--text-muted); margin-bottom:22px; line-height:1.5; }
-.confirm-btns { display:flex; gap:10px; justify-content:center; }
+.confirm-btns { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
 .checkbox-label { display:flex; align-items:center; gap:8px; cursor:pointer; text-transform:none; font-size:13px; font-weight:500; color:var(--text-muted); }
 .checkbox-label input[type=checkbox] { accent-color:var(--accent); cursor:pointer; width:16px; height:16px; }
 .section-label { font-family:var(--font-head); font-size:12px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-dim); margin-bottom:8px; }
@@ -1289,7 +1289,7 @@
         </div>
       </div>
     </div>
-    <div class="form-row" style="margin-bottom:12px;">
+    <div class="form-row" id="edit-p-plane-wrap" style="margin-bottom:12px;">
       <div><label>Flugzeugtyp</label>
         <div class="toggle-group">
           <button class="toggle-opt" id="edit-p-motor" onclick="setEditPType('motor')">✈ Motor</button>
@@ -1731,7 +1731,7 @@
           <div><label>Name</label>
             <input type="text" id="wiz-pname" placeholder="Name" onkeydown="if(event.key==='Enter')addWizParticipant()">
           </div>
-          <div><label>Typ</label>
+          <div id="wiz-ptype-wrap"><label>Typ</label>
             <div class="toggle-group" style="height:46px;">
               <button class="toggle-opt" id="wiz-ptype-motor" onclick="setWizPType('motor')" style="padding:0 10px;">✈</button>
               <button class="toggle-opt active-sail" id="wiz-ptype-sail" onclick="setWizPType('sail')" style="padding:0 10px;">🛩</button>
@@ -2147,7 +2147,7 @@
       </div>
     </div>
     <div class="form-row cols-2" style="margin-bottom:0;">
-      <div><label>Flugzeugtyp</label>
+      <div id="p-plane-wrap"><label>Flugzeugtyp</label>
         <div class="toggle-group">
           <button class="toggle-opt" id="cat-motor" onclick="setPType('motor')">✈ Motor</button>
           <button class="toggle-opt active-sail" id="cat-sail" onclick="setPType('sail')">🛩 Segler</button>
@@ -3434,6 +3434,8 @@ function toggleWizDiscipline(disc){
     wizDisciplines.add(disc);
   }
   updateDiscCards();
+  const wpt=document.getElementById('wiz-ptype-wrap');
+  if(wpt) wpt.style.display=wizDisciplines.has('precision')?'':'none';
 }
 
 // Wizard mode: null=choosing, 'new'=creating, 'import'=importing
@@ -3763,7 +3765,8 @@ function addWizParticipant(){
   const name=document.getElementById('wiz-pname').value.trim(); if(!name) return;
   if(wizParticipants.find(p=>p.name===name)){toast('Name bereits vorhanden!',true);return;}
   const club=wizClubsEnabled?(document.getElementById('wiz-pclub')?.value||''):'';
-  wizParticipants.push({name,planeType:wizPType,youth:wizPCat==='youth',club});
+  const effectiveWizPType=wizDisciplines.has('precision')?wizPType:'sail';
+  wizParticipants.push({name,planeType:effectiveWizPType,youth:wizPCat==='youth',club});
   document.getElementById('wiz-pname').value='';
   renderWizList();
   document.getElementById('wiz-pname').focus();
@@ -4277,6 +4280,10 @@ function applySettings(){
   const hasPrecision=(settings.disciplines||['precision']).includes('precision');
   const precSec=document.getElementById('s-precision-section');
   if(precSec) precSec.style.display=hasPrecision?'':'none';
+  const pPlaneWrap=document.getElementById('p-plane-wrap');
+  const editPPlaneWrap=document.getElementById('edit-p-plane-wrap');
+  if(pPlaneWrap) pPlaneWrap.style.display=hasPrecision?'':'none';
+  if(editPPlaneWrap) editPPlaneWrap.style.display=hasPrecision?'':'none';
   updateWeightLabels(); setType(currentType);
   setupEntryPage();
   ['legend-motor-time','legend-sail-time'].forEach((id,i)=>{const el=document.getElementById(id);if(el)el.textContent=formatTime(i===0?settings.limitMotor:settings.limitSail);});
@@ -4389,7 +4396,8 @@ async function addParticipant(){
   const num=nextNum();
   try{
     const club=settings.clubsEnabled?(document.getElementById('p-club')?.value||''):'';
-    const p=await api('POST','/contests/'+currentContestId+'/participants',{name,number:num,youth:pCatSelected==='youth',planeType:pTypeSelected,club});
+    const effectivePType=getDiscs().includes('precision')?pTypeSelected:'sail';
+    const p=await api('POST','/contests/'+currentContestId+'/participants',{name,number:num,youth:pCatSelected==='youth',planeType:effectivePType,club});
     if(!p._offline){ participants.push(p); toast('Teilnehmer #'+num+' hinzugefügt!'); }
     document.getElementById('p-name').value='';
     renderParticipants(); populatePilotSelect();
@@ -4464,7 +4472,7 @@ function renderParticipants(){
         <div style="font-family:var(--font-head);font-size:16px;font-weight:700;color:var(--text-muted);min-width:36px;">${p.number||'—'}</div>
         <div class="participant-name">${esc(p.name)}</div>
         <div class="participant-badges">
-          ${p.planeType==='motor'?'<span class="badge badge-motor">Motor</span>':'<span class="badge badge-sail">Segler</span>'}
+          ${getDiscs().includes('precision')?(p.planeType==='motor'?'<span class="badge badge-motor">Motor</span>':'<span class="badge badge-sail">Segler</span>'):''}
           ${p.youth?'<span class="badge badge-youth">Jugend</span>':''}
           ${p.lost?'<span class="badge badge-lost">🛸 Ausgeschieden</span>':''}
         </div>
@@ -4484,7 +4492,7 @@ function renderParticipants(){
       <div style="font-family:var(--font-head);font-size:16px;font-weight:700;color:var(--text-muted);min-width:36px;">${p.number||'—'}</div>
       <div class="participant-name">${esc(p.name)}${p._offline?'<span class="entry-offline-badge" style="margin-left:6px;">⏳</span>':''}</div>
       <div class="participant-badges">
-        ${p.planeType==='motor'?'<span class="badge badge-motor">Motor</span>':'<span class="badge badge-sail">Segler</span>'}
+        ${getDiscs().includes('precision')?(p.planeType==='motor'?'<span class="badge badge-motor">Motor</span>':'<span class="badge badge-sail">Segler</span>'):''}
         ${p.youth?'<span class="badge badge-youth">Jugend</span>':''}
         ${p.club&&settings.clubsEnabled?`<span class="badge" style="background:rgba(160,130,255,0.18);color:#b8a0ff;border:1px solid rgba(160,130,255,0.3);">🏛 ${esc(p.club)}</span>`:''}
         ${p.lost?'<span class="badge badge-lost">🛸 Ausgeschieden</span>':''}
@@ -4619,7 +4627,7 @@ function printStartList(){
       <td class="nr">${p.number||'—'}</td>
       <td class="name">${p.name}${p.lost?' <span class="badge-lost">Ausgeschieden</span>':''}</td>
       <td class="cat">${p.youth?'Jugend':'Senior'}</td>
-      <td class="plane">${p.planeType==='motor'?'Motor':'Segler'}</td>
+      ${discs.includes('precision')?`<td class="plane">${p.planeType==='motor'?'Motor':'Segler'}</td>`:''}
       ${showClub?`<td class="club">${p.club?esc(p.club):'—'}</td>`:''}
       <td class="sig"></td>
     </tr>`).join('');
@@ -4656,7 +4664,7 @@ td.sig::after{content:'Unterschrift';position:absolute;bottom:1px;left:4px;font-
 ${meta?`<div class="meta">${meta}</div>`:''}
 <div class="discs">Disziplinen: ${discStr}</div>
 <table>
-  <thead><tr><th style="width:38px;">#</th><th>Name</th><th>Wertung</th><th>Typ</th>${showClub?'<th>Verein</th>':''}<th style="width:130px;">Unterschrift</th></tr></thead>
+  <thead><tr><th style="width:38px;">#</th><th>Name</th><th>Wertung</th>${discs.includes('precision')?'<th>Typ</th>':''}${showClub?'<th>Verein</th>':''}<th style="width:130px;">Unterschrift</th></tr></thead>
   <tbody>${rows}</tbody>
 </table>
 <div class="footer">Erstellt am ${new Date().toLocaleDateString('de-DE')} · ${sorted.filter(p=>!p.lost).length} Teilnehmer</div>
@@ -4718,20 +4726,21 @@ async function saveEditParticipant(){
   if(!name){toast('Bitte Name eingeben!',true);return;}
   if(participants.find(p=>p.name===name&&p.id!==id)){toast('Name bereits vorhanden!',true);return;}
   if(number&&participants.find(p=>p.number==number&&p.id!==id)){toast('Startnummer '+number+' ist bereits vergeben!',true);return;}
+  const effectiveEditPType=getDiscs().includes('precision')?editPType:'sail';
   if(participants.find(p=>p.id===id)?._offline){
     const op=offlineQueue.find(o=>o.tempId===id&&o.method==='POST');
     const club=settings.clubsEnabled?(document.getElementById('edit-p-club')?.value||''):'';
-    if(op){op.body={...op.body,name,number,youth:editPCat==='youth',planeType:editPType,lost,club};oqSave();}
+    if(op){op.body={...op.body,name,number,youth:editPCat==='youth',planeType:effectiveEditPType,lost,club};oqSave();}
     const i=participants.findIndex(p=>p.id===id);
-    if(i!==-1) participants[i]={...participants[i],name,number,youth:editPCat==='youth',planeType:editPType,lost,club};
+    if(i!==-1) participants[i]={...participants[i],name,number,youth:editPCat==='youth',planeType:effectiveEditPType,lost,club};
     closeEditParticipant(); renderParticipants(); populatePilotSelect(); renderLeaderboard(); toast('Teilnehmer aktualisiert!');
     return;
   }
   const club=settings.clubsEnabled?(document.getElementById('edit-p-club')?.value||''):'';
   try{
-    await api('PUT','/contests/'+currentContestId+'/participants/'+id,{name,number,youth:editPCat==='youth',planeType:editPType,lost,club});
+    await api('PUT','/contests/'+currentContestId+'/participants/'+id,{name,number,youth:editPCat==='youth',planeType:effectiveEditPType,lost,club});
     const i=participants.findIndex(p=>p.id===id);
-    if(i!==-1) participants[i]={...participants[i],name,number,youth:editPCat==='youth',planeType:editPType,lost,club};
+    if(i!==-1) participants[i]={...participants[i],name,number,youth:editPCat==='youth',planeType:effectiveEditPType,lost,club};
     closeEditParticipant(); renderParticipants(); populatePilotSelect(); renderLeaderboard(); toast('Teilnehmer aktualisiert!');
   }catch(e){toast('Fehler!',true);}
 }
@@ -5987,7 +5996,7 @@ function exportLeaderboardPDF(){
       <td class="ctr small">#${p.number||'—'}</td>
       <td class="name">${p.name}${p.youth?' <sup>J</sup>':''}</td>
       ${showClub?`<td class="club">${p.club||'—'}</td>`:''}
-      <td class="ctr small">${p.planeType==='motor'?'Motor':'Segler'}</td>
+      ${discs.includes('precision')?`<td class="ctr small">${p.planeType==='motor'?'Motor':'Segler'}</td>`:''}
       ${tdDiscs}
       <td class="total">${sc.grandTotal}</td>
     </tr>`;
@@ -6038,7 +6047,7 @@ footer{margin-top:10px;border-top:1px solid #ddd;padding-top:5px;display:flex;ju
 </header>
 <table>
   <thead><tr>
-    <th>Rang</th><th>#</th><th>Name</th>${showClub?'<th>Verein</th>':''}<th>Typ</th>
+    <th>Rang</th><th>#</th><th>Name</th>${showClub?'<th>Verein</th>':''}${discs.includes('precision')?'<th>Typ</th>':''}
     ${thDiscs}
     <th class="total">Gesamt</th>
   </tr></thead>
@@ -6151,7 +6160,7 @@ footer{margin-top:10px;border-top:1px solid #ddd;padding-top:5px;display:flex;ju
 <table>
   <colgroup><col style="width:44px"><col><col style="width:64px"><col style="width:80px"></colgroup>
   <thead><tr>
-    <th style="text-align:center">Rang</th><th>Verein</th><th style="text-align:center">Piloten</th><th style="text-align:center">${avgMode?'∅ Punkte':'Σ Punkte'}</th>
+    <th style="text-align:center">Rang</th><th style="text-align:left">Verein</th><th style="text-align:center">Piloten</th><th style="text-align:center">${avgMode?'∅ Punkte':'Σ Punkte'}</th>
   </tr></thead>
   <tbody>${summaryRows}</tbody>
 </table>
@@ -6223,7 +6232,7 @@ function openPilotDetail(pilotId){
   document.getElementById('pd-rank').textContent=rankLabel;
   document.getElementById('pd-name').textContent=(pilot.number?'#'+pilot.number+' ':'')+pilot.name;
   const badges=[];
-  badges.push(pilot.planeType==='motor'?'<span class="badge badge-motor">Motor</span>':'<span class="badge badge-sail">Segler</span>');
+  if(discs.includes('precision')) badges.push(pilot.planeType==='motor'?'<span class="badge badge-motor">Motor</span>':'<span class="badge badge-sail">Segler</span>');
   if(pilot.youth) badges.push('<span class="badge badge-youth">Jugend</span>');
   if(pilot.lost) badges.push('<span class="badge badge-lost">🛸 Ausgeschieden</span>');
   document.getElementById('pd-badges').innerHTML=badges.join('');
@@ -6443,7 +6452,7 @@ async function _buildPilotCard(pilotId){
   const badgeY=heroY+252;
   const badges2=[];
   if(pilot.number) badges2.push({label:'Startnr. '+pilot.number,c:'#b0bfd4',bg:'rgba(176,191,212,0.12)',startnr:true});
-  badges2.push(pilot.planeType==='motor'?{label:'MOTOR',c:'#4da6ff',bg:'rgba(77,166,255,0.15)'}:{label:'SEGLER',c:'#c77dff',bg:'rgba(199,125,255,0.15)'});
+  if(discs.includes('precision')) badges2.push(pilot.planeType==='motor'?{label:'MOTOR',c:'#4da6ff',bg:'rgba(77,166,255,0.15)'}:{label:'SEGLER',c:'#c77dff',bg:'rgba(199,125,255,0.15)'});
   if(pilot.youth) badges2.push({label:'JUGEND',c:'#06d6a0',bg:'rgba(6,214,160,0.15)'});
   if(pilot.lost) badges2.push({label:'AUSGESCHIEDEN',c:'#ef476f',bg:'rgba(239,71,111,0.15)'});
   ctx.font=`700 22px ${FONT}`;
@@ -6759,7 +6768,7 @@ async function adminResetAll(){
 
 // ======================== CONTEST SETTINGS ========================
 let csDropWorst=false,csDropWorstLimbo=false,csDropWorstBallon=false,csStatus='active';
-let _csFullContest=null;
+let _csFullContest=null, _csOriginalDisciplines=[];
 let csClubsEnabled=false, csClubs=[], csClubAverage=false;
 function setCSClubsEnabled(v){
   csClubsEnabled=v;
@@ -6819,6 +6828,7 @@ async function openContestSettings(id){
     if(vpBadge){ vpBadge.style.display=c.hasViewerPassword?'inline-flex':'none'; }
     const s=c.settings||{};
     _csFullContest=c; // store for csToggleDisc entry checks
+    _csOriginalDisciplines=[...(c.settings?.disciplines||['precision'])];
     // Render discipline management
     renderCSDiscipines(c, s);
     document.getElementById('cs-wTime').value=s.wTime||50; document.getElementById('cs-wTime-val').textContent=s.wTime||50;
@@ -7130,6 +7140,16 @@ async function saveContestSettings(){
       await loadContest(id);
       applySettings(); setupEntryPage();
       if(activeDiscipline==='ballon') renderBallonAttempts();
+      // Precision newly activated → reset all participants to planeType 'sail'
+      const hadPrecision=_csOriginalDisciplines.includes('precision');
+      const nowHasPrecision=(s.disciplines||['precision']).includes('precision');
+      if(!hadPrecision&&nowHasPrecision&&participants.length>0){
+        await Promise.all(participants.map(p=>
+          api('PUT','/contests/'+id+'/participants/'+p.id,{name:p.name,number:p.number,youth:!!p.youth,planeType:'sail',lost:!!p.lost,club:p.club||''})
+        ));
+        await loadContest(id);
+        toast('Präzisionslandung aktiviert — alle Teilnehmer auf Segler gesetzt.');
+      }
       // Recalculate existing entries with new point settings
       const recalc=entries.map(e=>{
         const disc=e.discipline||'precision';
