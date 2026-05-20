@@ -63,6 +63,8 @@
 - Ankündigungen (Info / Warnung / Erfolg) für Besucher
 - Willkommenstext (max. 500 Zeichen) und Vereinslogo konfigurierbar
 
+<img src="Screenshots/Weclome.jpg" alt="Besucher-Ansicht" width="700"/>
+
 ### Personalisierung
 - Eigenes App-Icon hochladbar (wird auch im Browser-Tab und PWA verwendet)
 - Vereinslogo für die Willkommensseite
@@ -214,7 +216,7 @@ Als User eingeloggt:
 2. **„Neuer Wettbewerb"** wählen
 3. Name, Datum und gewünschte Disziplinen konfigurieren
 4. Unter **„Teilnehmer"** die Piloten eintragen
-5. Unter **„Eintrag"** Wertungen erfassen
+5. Unter **„Wertung"** Wertungen erfassen
 
 ---
 
@@ -455,7 +457,7 @@ PORT=3000 FORCE_HTTPS=true RCLONE_REMOTE=aeroscore-backup RCLONE_PATH=aeroscore/
 ├── server.js          — Backend (Node.js / Express)
 ├── package.json       — Abhängigkeiten und npm-Skripte
 ├── package-lock.json
-├── README.md
+├── Readme.md
 ├── public/
 │   ├── index.html     — Haupt-App (Single-Page-App)
 │   ├── welcome.html   — Besucher-Ansicht mit Live-Leaderboard
