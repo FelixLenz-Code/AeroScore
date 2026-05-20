@@ -63,7 +63,7 @@
 - Ankündigungen (Info / Warnung / Erfolg) für Besucher
 - Willkommenstext (max. 500 Zeichen) und Vereinslogo konfigurierbar
 
-<img src="Screenshots/Weclome.jpg" alt="Besucher-Ansicht" width="700"/>
+<img src="Screenshots/Welcome.jpg" alt="Besucher-Ansicht" width="700"/>
 
 ### Personalisierung
 - Eigenes App-Icon hochladbar (wird auch im Browser-Tab und PWA verwendet)
