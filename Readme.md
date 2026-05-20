@@ -1,7 +1,8 @@
 <p align="center">
-  <img src="Screenshots/Banner.png" alt="AeroScore Logo" width="1000">
+  <img src="public/AeroScore-Logo-Gross.png" alt="AeroScore Logo" width="160">
 </p>
 
+# AeroScore
 
 **Wettbewerbssoftware für Modellflugvereine** — Teilnehmer verwalten, Wertungen eintragen, Ergebnisse live auf dem Beamer präsentieren.
 
@@ -64,8 +65,6 @@
 - Vereinslogo für die Willkommensseite
 - Eigene Fanfare-Sounds für die Siegerehrung (MP3/OGG/WAV)
 - Vier eingebaute Fanfare-Stile wählbar
-
-<img src="Screenshots/Einstellungen.jpg" alt="Teilnehmereintrag" width="700"/>
 
 ### Technisches
 - **Offline-Modus** — Einträge werden lokal gespeichert und nach Verbindungsaufbau automatisch synchronisiert
