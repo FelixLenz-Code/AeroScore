@@ -19,7 +19,7 @@ const CONFIG_FILE = path.join(DATA_DIR, 'config.json');
 
 function readConfig() {
   try { if (fs.existsSync(CONFIG_FILE)) return JSON.parse(fs.readFileSync(CONFIG_FILE,'utf8')); } catch {}
-  return { welcomeMessage:'', imprintEnabled:false, imprintText:'', privacyEnabled:false, privacyText:'', baseUrl:'', announcements:[], fanfareStyle:'victory-chime' };
+  return { welcomeMessage:'', imprintEnabled:false, imprintText:'', privacyEnabled:false, privacyText:'', baseUrl:'', announcements:[], fanfareStyle:'victory-chime', freundschaftsfliegenEnabled:false };
 }
 function writeConfig(cfg) { fs.writeFileSync(CONFIG_FILE, JSON.stringify(cfg, null, 2)); markDirty(); }
 
@@ -548,6 +548,7 @@ app.get('/api/config', (req,res) => {
   const cfg = readConfig();
   cfg.hasLogo = !!findLogoFile();
   cfg.hasIcon = !!findIconFile();
+  if (cfg.freundschaftsfliegenEnabled === undefined) cfg.freundschaftsfliegenEnabled = false;
   res.json(cfg);
 });
 app.put('/api/config', requireRole('admin'), (req,res) => {
@@ -572,6 +573,7 @@ app.put('/api/config', requireRole('admin'), (req,res) => {
       cfg.fanfareStyle = 'victory-chime';
     }
   }
+  if (req.body.freundschaftsfliegenEnabled !== undefined) cfg.freundschaftsfliegenEnabled = !!req.body.freundschaftsfliegenEnabled;
   if (req.body.announcements !== undefined && Array.isArray(req.body.announcements)) {
     let nextId = Math.max(0, ...(cfg.announcements||[]).map(a=>a.id||0)) + 1;
     cfg.announcements = req.body.announcements.slice(0, 20).map(a => ({

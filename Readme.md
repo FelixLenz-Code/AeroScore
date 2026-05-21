@@ -36,6 +36,7 @@
 - **Limbo** — Höhenstufen mit frei konfigurierbaren Punkten
 - **Ballonstechen** — Mehrere Versuche pro Runde, konfigurierbare Maximalpunktzahl
 - **Glücksrad** — Multiplikator auf die Gesamtpunktzahl aller anderen Disziplinen
+- **Freundschaftsfliegen** — Vereinswettbewerb mit Le-Mans-Start: Loopings, Ballonstechen (3 Anflüge) und Zeitwertung pro Pilot, danach Glücksrad-Phase (×10 Bonuspunkte). Vereinswertung per Mittelwert mit konfigurierbarer Mindestteamgröße und Strafpunkten für fehlende Piloten. (Muss vom Admin in den Einstellungen freigeschaltet werden.)
 
 <img src="Screenshots/Disziplinen.png" alt="disziplinen" width="400"/>
 
@@ -512,4 +513,4 @@ Das AeroScore-Logo wurde mit **Google Gemini** erstellt.
 
 ## Lizenz
 
-MIT
+[![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc/4.0/)
