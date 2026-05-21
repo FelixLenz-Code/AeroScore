@@ -3674,6 +3674,8 @@ function openWizard(){
   loadWizSounds();
   // Reset FF state
   wizFFEnabled=false; updateFFCard();
+  const wpt=document.getElementById('wiz-ptype-wrap');
+  if(wpt) wpt.style.display='';
   // Show/hide FF section based on admin config
   const ffSec=document.getElementById('wiz-ff-section');
   if(ffSec) ffSec.style.display=appConfig.freundschaftsfliegenEnabled?'block':'none';
@@ -3739,6 +3741,8 @@ function toggleWizFF(){
     setWizClubsEnabled(true);
     setWizClubAverage(true); // FF always uses average
   }
+  const wpt=document.getElementById('wiz-ptype-wrap');
+  if(wpt) wpt.style.display=(!wizFFEnabled&&wizDisciplines.has('precision'))?'':'none';
   updateFFCard();
 }
 
@@ -6095,15 +6099,24 @@ function setDropWorst(v,silent=false){ settings.dropWorst=v; document.getElement
 function setTensionMode(v,silent=false){ settings.tensionMode=v; document.getElementById('s-tension-on').className='toggle-opt'+(v?' active-motor':''); document.getElementById('s-tension-off').className='toggle-opt'+(!v?' active-motor':''); applyTensionBlur(); if(!silent) renderLeaderboard(); }
 function applyTensionBlur(){
   const discs=getDiscs();
-  const precR=settings.rounds||3, limboR=settings.limboRounds||3, ballonR=settings.ballonRounds||1;
-  // Exclude gluecksrad from tension — it's always last and doesn't affect excitement
-  const scoringDiscs=discs.filter(d=>d!=='gluecksrad');
-  const totalR=scoringDiscs.reduce((s,d)=>s+(d==='limbo'?limboR:d==='ballon'?ballonR:precR),0);
   const rel=participants.filter(p=>currentView!=='youth'||p.youth).filter(p=>!p.lost);
-  // Count only non-gluecksrad entries for tension trigger
-  const minE=rel.length?Math.min(...rel.map(p=>entries.filter(e=>e.pilotId===p.id&&e.discipline!=='gluecksrad').length)):0;
-  const allDone=rel.length>0&&rel.every(p=>entries.filter(e=>e.pilotId===p.id&&e.discipline!=='gluecksrad').length>=totalR);
-  const blur=settings.tensionMode&&rel.length>0&&totalR>0&&minE>=(totalR-1)&&!allDone;
+  let blur=false;
+  if(discs.includes('ff')){
+    // FF: Blur während der Glücksrad-Phase (alle geflogen, aber noch nicht alle Räder eingetragen)
+    const ffE=rel.map(p=>entries.find(e=>e.pilotId===p.id&&e.discipline==='ff'));
+    const flightDone=ffE.filter(e=>e).length;
+    const wheelDone=ffE.filter(e=>e&&e.ffWheelResult!==null&&e.ffWheelResult!==undefined).length;
+    blur=settings.tensionMode&&rel.length>0&&flightDone===rel.length&&wheelDone<rel.length;
+  } else {
+    const precR=settings.rounds||3, limboR=settings.limboRounds||3, ballonR=settings.ballonRounds||1;
+    // Exclude gluecksrad from tension — it's always last and doesn't affect excitement
+    const scoringDiscs=discs.filter(d=>d!=='gluecksrad');
+    const totalR=scoringDiscs.reduce((s,d)=>s+(d==='limbo'?limboR:d==='ballon'?ballonR:precR),0);
+    // Count only non-gluecksrad entries for tension trigger
+    const minE=rel.length?Math.min(...rel.map(p=>entries.filter(e=>e.pilotId===p.id&&e.discipline!=='gluecksrad').length)):0;
+    const allDone=rel.length>0&&rel.every(p=>entries.filter(e=>e.pilotId===p.id&&e.discipline!=='gluecksrad').length>=totalR);
+    blur=settings.tensionMode&&rel.length>0&&totalR>0&&minE>=(totalR-1)&&!allDone;
+  }
   const t=document.querySelector('#lb-container table');
   if(t){t.style.filter=blur?'blur(10px)':'';t.style.userSelect=blur?'none':'';t.style.pointerEvents=blur?'none':'';}
   const tw=document.getElementById('tension-banner-wrap'); if(tw) tw.style.display=blur?'block':'none';
@@ -6725,6 +6738,7 @@ function renderClubRanking(){
     </tr>`;
   }).join('')}
   </tbody></table>`;
+  setTimeout(applyTensionBlur,0);
 }
 function openClubDetail(idx){
   const row=_clubDetailRows[idx]; if(!row) return;
@@ -7909,13 +7923,23 @@ function renderCSLimboLevels(){}
 
 function renderCSDiscipines(contest, s){
   const el=document.getElementById('cs-disciplines-list'); if(!el) return;
+  const active=(s.disciplines||['precision']);
+  if(active.includes('ff')){
+    el.innerHTML=`<div style="display:flex;align-items:center;gap:10px;padding:9px 0;">
+      <span style="font-size:16px;">🤝</span>
+      <div style="flex:1;">
+        <span style="font-family:var(--font-head);font-size:13px;font-weight:700;color:var(--gold);">Freundschaftsfliegen</span>
+        <span style="font-size:11px;color:var(--text-dim);margin-left:6px;">eigenständige Disziplin, nicht kombinierbar</span>
+      </div>
+    </div>`;
+    return;
+  }
   const discInfo={
     precision:  {icon:'🎯',name:'Präzisionslandung',color:'var(--motor)'},
     limbo:      {icon:'🏹',name:'Limbo',            color:'var(--sail)'},
     ballon:     {icon:'🎈',name:'Ballonstechen',     color:'#ff8c00'},
     gluecksrad: {icon:'🎡',name:'Glücksrad',        color:'var(--gold)'},
   };
-  const active=(s.disciplines||['precision']);
   el.innerHTML=['precision','limbo','ballon','gluecksrad'].map(d=>{
     const info=discInfo[d];
     const isActive=active.includes(d);
@@ -7953,6 +7977,7 @@ function csToggleDisc(disc, activate){
   const csContest=_csFullContest||currentContest;
   if(!csContest) return;
   const s=csContest.settings||{};
+  if((s.disciplines||[]).includes('ff')){toast('FF-Wettbewerb kann nicht geändert werden.',true);return;}
   let discs=[...(s.disciplines||['precision'])];
   if(activate){
     if(!discs.includes(disc)) discs.push(disc);
@@ -8489,11 +8514,19 @@ function fsRender(){
 
   // Spannungsmodus im Vollbild
   const _fsTension=(()=>{
-    const sd=getDiscs().filter(d=>d!=='gluecksrad');
-    const totalR=sd.reduce((s,d)=>s+(d==='ballon'?(settings.ballonRounds||1):d==='limbo'?(settings.limboRounds||3):(settings.rounds||3)),0);
     const _fsv=currentView==='clubs'?'all':currentView;
     const rel=participants.filter(p=>_fsv!=='youth'||p.youth).filter(p=>!p.lost);
-    if(!settings.tensionMode||!rel.length||!totalR) return false;
+    if(!settings.tensionMode||!rel.length) return false;
+    const discs=getDiscs();
+    if(discs.includes('ff')){
+      const ffE=rel.map(p=>entries.find(e=>e.pilotId===p.id&&e.discipline==='ff'));
+      const flightDone=ffE.filter(e=>e).length;
+      const wheelDone=ffE.filter(e=>e&&e.ffWheelResult!==null&&e.ffWheelResult!==undefined).length;
+      return flightDone===rel.length&&wheelDone<rel.length;
+    }
+    const sd=discs.filter(d=>d!=='gluecksrad');
+    const totalR=sd.reduce((s,d)=>s+(d==='ballon'?(settings.ballonRounds||1):d==='limbo'?(settings.limboRounds||3):(settings.rounds||3)),0);
+    if(!totalR) return false;
     const minE=Math.min(...rel.map(p=>entries.filter(e=>e.pilotId===p.id&&e.discipline!=='gluecksrad').length));
     const allDone=rel.every(p=>entries.filter(e=>e.pilotId===p.id&&e.discipline!=='gluecksrad').length>=totalR);
     return minE>=(totalR-1)&&!allDone;
