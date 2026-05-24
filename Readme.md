@@ -59,6 +59,7 @@
 - Neuberechnung aller Einträge bei nachträglicher Einstellungsänderung
 - **Vollbild-/Beamer-Modus** mit animierter Rangliste, Startreihenfolge, QR-Code und Siegertreppchen
 - PDF-Export für alle Wertungsarten (Gesamt, Jugend, Vereinswertung)
+- **QR-Code-Aushang als PDF** — druckbares A4-Blatt pro Wettbewerb mit großem QR-Code (Link zur Besucher-Ansicht), Wettbewerbsname, Datum/Ort und — bei passwortgeschützten Wettbewerben — dem Passwort im Klartext; mit Vereinslogo wenn konfiguriert
 
 <img src="Screenshots/Vollbild.png" alt="Vollbild" width="700"/>
 <img src="Screenshots/Animation.png" alt="Animation" width="700"/>
@@ -68,7 +69,8 @@
 - Wettbewerb duplizieren (Einstellungen + Teilnehmer übernehmen)
 - Zugriffsverwaltung: Wettbewerbe mit anderen Benutzern teilen
 - Teilnehmer und Einträge im Mehrfach-Auswahl-Modus löschen
-- Druckbare Startliste
+- Druckbare Startliste (direkt im Browser)
+- **QR-Code-Aushang** pro Wettbewerb als PDF — Button 📲 in der Wettbewerbsliste
 - Pilot-Ergebniskarte als Bild teilen oder herunterladen
 - Abgeschlossene Wettbewerbe werden nach 14 Tagen automatisch archiviert
 
