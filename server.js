@@ -325,7 +325,7 @@ function runBackup() {
 
     for (const c of (db.contests||[])) {
       const out = JSON.parse(JSON.stringify(c));
-      if (out.settings) { delete out.settings.viewerPasswordHash; delete out.settings.viewerTokens; }
+      if (out.settings) { delete out.settings.viewerPasswordHash; delete out.settings.viewerPasswordPlain; delete out.settings.viewerTokens; }
       const slug = (c.name||'contest').replace(/[^a-zA-Z0-9äöüÄÖÜß\-_ ]/g,'_').trim().slice(0,40);
       zip.addFile(`exports/${slug}.json`, Buffer.from(JSON.stringify(out, null, 2)));
     }
@@ -428,7 +428,7 @@ function createBackupZip() {
   for (const c of (db.contests || [])) {
     const safe = (c.name||'contest').replace(/[^a-zA-Z0-9äöüÄÖÜß\-_ ]/g,'_').trim().slice(0,60);
     const out  = JSON.parse(JSON.stringify(c));
-    if (out.settings) { delete out.settings.viewerPasswordHash; delete out.settings.viewerTokens; }
+    if (out.settings) { delete out.settings.viewerPasswordHash; delete out.settings.viewerPasswordPlain; delete out.settings.viewerTokens; }
     zip.addFile(`exports/${safe}.json`, Buffer.from(JSON.stringify(out, null, 2)));
   }
 
@@ -879,7 +879,13 @@ app.get('/api/contests/:id', (req,res) => {
   // Strip sensitive fields before returning
   const out = {...c};
   const hasViewerPassword = !!(c.settings?.viewerPasswordHash);
-  if (out.settings) { out.settings = {...out.settings}; delete out.settings.viewerPasswordHash; delete out.settings.viewerTokens; }
+  const isSessUser = sess && (sess.role === 'admin' || canAccessContest(c, sess.userId));
+  if (out.settings) {
+    out.settings = {...out.settings};
+    delete out.settings.viewerPasswordHash;
+    delete out.settings.viewerTokens;
+    if (!isSessUser) delete out.settings.viewerPasswordPlain;
+  }
   out.hasViewerPassword = hasViewerPassword;
   res.json(out);
 });
@@ -931,9 +937,11 @@ app.put('/api/contests/:id', requireContestAccess, (req,res) => {
     if (req.body.viewerPassword === '') {
       // Remove password protection
       delete c.settings.viewerPasswordHash;
+      delete c.settings.viewerPasswordPlain;
       delete c.settings.viewerTokens;
     } else {
       c.settings.viewerPasswordHash = hashPw(req.body.viewerPassword);
+      c.settings.viewerPasswordPlain = req.body.viewerPassword;
       c.settings.viewerTokens = {};
     }
   }
@@ -1104,7 +1112,7 @@ app.post('/api/contests/:cid/entries/recalculate', requireContestAccess, (req,re
 
 app.get('/api/contests/:id/export', requireContestAccess, (req,res) => {
   const out = JSON.parse(JSON.stringify(req.contest));
-  if (out.settings) { delete out.settings.viewerPasswordHash; delete out.settings.viewerTokens; }
+  if (out.settings) { delete out.settings.viewerPasswordHash; delete out.settings.viewerPasswordPlain; delete out.settings.viewerTokens; }
   res.json(out);
 });
 

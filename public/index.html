@@ -3564,6 +3564,7 @@ async function renderContestsList(){
         <div style="display:flex;gap:6px;">
           ${isOffline?'':`<button class="btn btn-ghost btn-sm" onclick="openContestSettings(${c.id})" title="Bearbeiten">✎</button>`}
           ${isOffline?'':`<button class="btn btn-ghost btn-sm" onclick="exportContest(${c.id},'${esc(c.name)}')" title="Exportieren">📥</button>`}
+          ${isOffline?'':`<button class="btn btn-ghost btn-sm" onclick="exportContestQrPdf(${c.id},'${esc(c.name)}',${!!c.hasViewerPassword})" title="QR-Code PDF">📲</button>`}
           ${isOffline?'':`<button class="btn btn-ghost btn-sm" onclick="openDuplicateModal(${c.id},'${esc(c.name)}')" title="Duplizieren">📋</button>`}
           <button class="btn btn-danger btn-sm" onclick="${isOffline?`cancelOfflineContest(${c.id})`:`deleteContest(${c.id},'${esc(c.name)}')`}" title="${isOffline?'Verwerfen':'Löschen'}">${isOffline?'✗':'✕'}</button>
         </div>
@@ -7582,6 +7583,152 @@ async function exportContest(id, name){
     a.download='aeroscore-export-'+safeName+'-'+_ts+'.json';
     a.click(); toast('Wettbewerb exportiert!');
   }catch(e){toast('Export fehlgeschlagen: '+e.message,true);}
+}
+
+async function exportContestQrPdf(id, name, hasViewerPassword){
+  const c = contests.find(x=>x.id===id);
+  // Reload full contest to get viewerPasswordPlain (only present for authenticated users)
+  let vpText = null;
+  if(hasViewerPassword){
+    try{
+      const full = await api('GET','/contests/'+id);
+      vpText = full.settings?.viewerPasswordPlain || null;
+    }catch{}
+  }
+
+  // QR-Code als Bild generieren
+  const baseUrl = (appConfig.baseUrl || '').replace(/\/$/, '') || window.location.origin;
+  const url = baseUrl + '/welcome';
+  const qrSize = 320;
+  let qrDataUrl = '';
+  if(typeof QRCode !== 'undefined'){
+    const tmp = document.createElement('div');
+    tmp.style.cssText = 'position:fixed;left:-9999px;top:-9999px;';
+    document.body.appendChild(tmp);
+    try{
+      new QRCode(tmp,{text:url,width:qrSize,height:qrSize,colorDark:'#000000',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});
+      await new Promise(r=>setTimeout(r,80));
+      const canvas = tmp.querySelector('canvas');
+      if(canvas) qrDataUrl = canvas.toDataURL('image/png');
+    } finally { document.body.removeChild(tmp); }
+  }
+
+  const date = c?.date ? new Date(c.date).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'}) : '';
+  const loc = c?.location ? esc(c.location) : '';
+  const meta = [date, loc].filter(Boolean).join(' · ');
+
+  const qrImg = qrDataUrl
+    ? `<img src="${qrDataUrl}" alt="QR-Code" style="width:${qrSize}px;height:${qrSize}px;display:block;">`
+    : `<div style="width:${qrSize}px;height:${qrSize}px;border:2px dashed #ccc;display:flex;align-items:center;justify-content:center;color:#999;font-size:13px;">QR-Code nicht verfügbar</div>`;
+
+  const origin = window.location.origin;
+  const logoHtml = appConfig.hasLogo
+    ? `<div class="logo-wrap"><img class="header-logo" src="${origin}/api/config/logo" alt="Logo"></div>`
+    : '';
+
+  const pwSection = hasViewerPassword
+    ? `<div class="pw-box">
+        <div class="pw-label">Passwort</div>
+        <div class="pw-value">${vpText ? esc(vpText) : '<span class="pw-blank"></span>'}</div>
+        ${!vpText?'<div class="pw-hint">Passwort manuell eintragen</div>':''}
+      </div>`
+    : '';
+
+  const displayUrl = url.replace(/^https?:\/\//,'');
+  const now = new Date().toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'});
+
+  const doc = `<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8">
+<title>QR-Code – ${esc(name)}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;700;800;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+@page{size:A4 portrait;margin:0}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Barlow',Arial,sans-serif;color:#0a1628;background:#fff;min-height:297mm;display:flex;flex-direction:column;}
+
+.header{background:#0a1628;color:#fff;padding:20px 32px;display:flex;align-items:center;justify-content:space-between;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+.header-left{display:flex;align-items:center;gap:14px;}
+.logo-wrap{background:#fff;border-radius:6px;padding:5px 8px;display:flex;align-items:center;justify-content:center;height:46px;}
+.header-logo{height:36px;width:auto;max-width:120px;object-fit:contain;display:block;}
+.header-text{}
+.header-appname{font-family:'Barlow Condensed',Arial,sans-serif;font-size:21pt;font-weight:900;letter-spacing:0.06em;color:#ffd166;line-height:1;}
+.header-sub{font-size:8.5pt;color:rgba(255,255,255,0.5);margin-top:2px;font-weight:400;letter-spacing:0.03em;}
+.header-plane{font-size:42pt;opacity:0.12;line-height:1;}
+
+.main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:36px 48px;text-align:center;}
+
+.contest-name{font-family:'Barlow Condensed',Arial,sans-serif;font-size:34pt;font-weight:900;line-height:1.1;color:#0a1628;max-width:14cm;word-break:break-word;letter-spacing:0.01em;}
+.contest-meta{font-size:11pt;color:#777;margin-top:7px;font-weight:500;}
+
+.divider{display:flex;align-items:center;gap:12px;margin:20px 0;width:100%;max-width:10cm;}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:#ddd;}
+.divider-icon{color:#c9a227;font-size:14pt;}
+
+.cta{font-family:'Barlow Condensed',Arial,sans-serif;font-size:14pt;font-weight:700;color:#555;margin-bottom:16px;letter-spacing:0.04em;text-transform:uppercase;}
+
+.qr-frame{position:relative;padding:14px;margin-bottom:10px;display:inline-block;}
+.qr-frame::before,.qr-frame::after,.corner-br,.corner-bl{content:'';position:absolute;width:24px;height:24px;border-color:#0a1628;border-style:solid;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+.qr-frame::before{top:0;left:0;border-width:3px 0 0 3px;}
+.qr-frame::after{top:0;right:0;border-width:3px 3px 0 0;}
+.corner-br{bottom:0;right:0;border-width:0 3px 3px 0;}
+.corner-bl{bottom:0;left:0;border-width:0 0 3px 3px;}
+
+.qr-url{font-family:'Barlow Condensed',Arial,sans-serif;font-size:10pt;color:#aaa;margin-bottom:22px;letter-spacing:0.05em;}
+
+.pw-box{padding:14px 44px;border:2px solid #0a1628;border-radius:8px;background:#f4f7ff;display:inline-block;min-width:200px;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+.pw-label{font-family:'Barlow Condensed',Arial,sans-serif;font-size:8.5pt;font-weight:700;color:#999;letter-spacing:0.14em;text-transform:uppercase;margin-bottom:6px;}
+.pw-value{font-family:'Barlow Condensed',Arial,sans-serif;font-size:34pt;font-weight:900;letter-spacing:0.1em;color:#0a1628;line-height:1.1;}
+.pw-blank{display:inline-block;min-width:200px;border-bottom:2.5px solid #0a1628;height:1.1em;vertical-align:bottom;}
+.pw-hint{font-size:9pt;color:#aaa;margin-top:6px;}
+
+.footer{border-top:1px solid #eee;padding:11px 32px;display:flex;justify-content:space-between;align-items:center;}
+.footer-date{font-size:8.5pt;color:#bbb;}
+.footer-brand{font-family:'Barlow Condensed',Arial,sans-serif;font-weight:800;font-size:10.5pt;color:#ccc;letter-spacing:0.07em;}
+
+@media print{body,*{-webkit-print-color-adjust:exact;print-color-adjust:exact}@page{size:A4 portrait;margin:0}}
+</style></head><body>
+
+<div class="header">
+  <div class="header-left">
+    ${logoHtml}
+    <div class="header-text">
+      <div class="header-appname">AeroScore</div>
+      <div class="header-sub">Modellflug-Wettbewerbssoftware</div>
+    </div>
+  </div>
+  <div class="header-plane">✈</div>
+</div>
+
+<div class="main">
+  <div class="contest-name">${esc(name)}</div>
+  ${meta?`<div class="contest-meta">${meta}</div>`:''}
+
+  <div class="divider"><span class="divider-icon">✦</span></div>
+
+  <div class="cta">QR-Code scannen &amp; Rangliste live verfolgen</div>
+
+  <div class="qr-frame">
+    ${qrImg}
+    <div class="corner-br"></div>
+    <div class="corner-bl"></div>
+  </div>
+  <div class="qr-url">${displayUrl}</div>
+
+  ${pwSection}
+</div>
+
+<div class="footer">
+  <span class="footer-date">Erstellt am ${now}</span>
+  <span class="footer-brand">AEROSCORE ✈</span>
+</div>
+
+<script>window.onload=()=>{window.print()}<\/script>
+</body></html>`;
+
+  const w = window.open('','_blank','width=750,height=950');
+  if(w){ w.document.write(doc); w.document.close(); }
+  else toast('Popup-Blocker aktiv — Popups für diese Seite erlauben.',true);
 }
 
 let _importData=null;
