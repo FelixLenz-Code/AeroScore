@@ -2659,35 +2659,6 @@
   <div class="section-sub">Einrichtung &amp; Administration</div>
 
   <div class="card">
-    <div class="card-title">☁️ Automatisches Cloud-Backup mit rclone</div>
-    <div id="guide-rclone" style="font-size:14px;line-height:1.8;color:var(--text);">
-      <!-- rendered by renderGuide() -->
-    </div>
-  </div>
-
-  <div class="card" style="margin-top:12px;">
-    <div class="card-title">🔄 Wiederherstellung auf neuem Server</div>
-    <div id="guide-restore" style="font-size:14px;line-height:1.8;color:var(--text);">
-      <style>
-        .guide-step{display:flex;gap:12px;margin-bottom:14px;align-items:flex-start;}
-        .guide-num{background:var(--accent);color:#000;font-family:var(--font-head);font-weight:900;font-size:13px;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}
-      </style>
-      <div class="guide-step"><div class="guide-num">1</div><div><strong>Node.js installieren</strong><div class="guide-code">curl -fsSL https://deb.nodesource.com/setup_20.x | sudo bash -
-sudo apt install nodejs<button class="guide-copy" onclick="navigator.clipboard.writeText('curl -fsSL https://deb.nodesource.com/setup_20.x | sudo bash -\nsudo apt install nodejs')">📋</button></div></div></div>
-      <div class="guide-step"><div class="guide-num">2</div><div><strong>App-Dateien aufspielen</strong><div class="guide-code">unzip aeroscore-deploy.zip -d /opt/
-cd /opt/modellflug && npm install<button class="guide-copy" onclick="navigator.clipboard.writeText('unzip aeroscore-deploy.zip -d /opt/\ncd /opt/modellflug && npm install')">📋</button></div></div></div>
-      <div class="guide-step"><div class="guide-num">3</div><div><strong>Rclone installieren &amp; mit demselben Account verbinden</strong><div class="guide-code">sudo apt install rclone
-rclone config  ← denselben Anbieter &amp; Account wie bisher<button class="guide-copy" onclick="navigator.clipboard.writeText('sudo apt install rclone\nrclone config')">📋</button></div></div></div>
-      <div class="guide-step"><div class="guide-num">4</div><div><strong>Daten aus der Cloud zurückkopieren</strong><div class="guide-code">rclone sync modellflug-backup:modellflug/ /opt/modellflug/data/<button class="guide-copy" onclick="navigator.clipboard.writeText('rclone sync modellflug-backup:modellflug/ /opt/modellflug/data/')">📋</button></div>
-      <div class="guide-ok">✓ Alle Wettbewerbe, Teilnehmer, Einträge &amp; Einstellungen sind sofort wiederhergestellt</div></div></div>
-      <div class="guide-step"><div class="guide-num">5</div><div><strong>Server starten</strong><div class="guide-code">RCLONE_REMOTE=modellflug-backup RCLONE_PATH=modellflug/ node server.js<button class="guide-copy" onclick="navigator.clipboard.writeText('RCLONE_REMOTE=modellflug-backup RCLONE_PATH=modellflug/ node server.js')">📋</button></div></div></div>
-      <div class="guide-step"><div class="guide-num">6</div><div><strong>Benutzer neu anlegen</strong> <span style="font-size:12px;color:var(--text-muted);">(users.json ist aus Sicherheitsgründen nicht im Backup)</span><br>Im Browser: <code>admin / admin</code> → Passwort sofort ändern → weitere User anlegen</div></div>
-      <div class="guide-note">⚠️ <strong>Nur einzelne Dateien wiederherstellen?</strong><br>
-      <code>rclone copy modellflug-backup:modellflug/wettbewerb.json /opt/modellflug/data/</code></div>
-    </div>
-  </div>
-
-  <div class="card" style="margin-top:12px;">
     <div class="card-title">💾 Backup &amp; Wiederherstellung</div>
 
     <div style="margin-bottom:12px;">
@@ -3961,13 +3932,20 @@ function renderWizClubList(){
   const html=wizClubs.length
     ? wizClubs.map((name,i)=>`
     <div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--sky-border);">
-      <span style="flex:1;font-size:13px;">🏛 ${esc(name)}</span>
+      <input value="${esc(name)}" style="flex:1;font-size:13px;background:var(--sky-mid);border:1px solid var(--sky-border2);border-radius:var(--radius);padding:4px 8px;color:var(--text);outline:none;" onblur="renameWizClub(${i},this.value)" onkeydown="if(event.key==='Enter')this.blur()">
       <button class="btn btn-ghost btn-sm" onclick="removeWizClub(${i})" style="color:var(--accent-red);">✕</button>
     </div>`).join('')
     : '<div style="font-size:12px;color:var(--text-dim);padding:4px 0;">Noch keine Vereine.</div>';
   ['wiz-club-list','wiz-ff-club-list'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.innerHTML=html;
   });
+}
+function renameWizClub(idx,val){
+  val=(val||'').trim();
+  if(!val){toast('Name darf nicht leer sein!',true);renderWizClubList();updateWizPClubSelect();return;}
+  if(wizClubs.indexOf(val)!==-1&&wizClubs.indexOf(val)!==idx){toast('Verein bereits vorhanden!',true);renderWizClubList();updateWizPClubSelect();return;}
+  wizClubs[idx]=val;
+  updateWizPClubSelect();
 }
 function addWizFFClub(){
   const inp=document.getElementById('wiz-ff-club-input');
@@ -7786,9 +7764,15 @@ function renderCSClubList(){
   if(!csClubs.length){el.innerHTML='<div style="font-size:12px;color:var(--text-dim);padding:4px 0;">Noch keine Vereine.</div>';return;}
   el.innerHTML=csClubs.map((name,i)=>`
     <div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--sky-border);">
-      <span style="flex:1;font-size:13px;">🏛 ${esc(name)}</span>
+      <input value="${esc(name)}" style="flex:1;font-size:13px;background:var(--sky-mid);border:1px solid var(--sky-border2);border-radius:var(--radius);padding:4px 8px;color:var(--text);outline:none;" onblur="renameCSClub(${i},this.value)" onkeydown="if(event.key==='Enter')this.blur()">
       <button class="btn btn-ghost btn-sm" onclick="removeCSClub(${i})" style="color:var(--accent-red);">✕</button>
     </div>`).join('');
+}
+function renameCSClub(idx,val){
+  val=(val||'').trim();
+  if(!val){toast('Name darf nicht leer sein!',true);renderCSClubList();return;}
+  if(csClubs.indexOf(val)!==-1&&csClubs.indexOf(val)!==idx){toast('Verein bereits vorhanden!',true);renderCSClubList();return;}
+  csClubs[idx]=val;
 }
 function setCSStatus(s){ csStatus=s; ['active','finished','archived'].forEach(st=>{ const el=document.getElementById('cs-st-'+st); if(el) el.className='toggle-opt'+(st===s?' active-motor':''); }); }
 function setCSDropWorst(v){ csDropWorst=v; document.getElementById('cs-drop-on').className='toggle-opt'+(v?' active-motor':''); document.getElementById('cs-drop-off').className='toggle-opt'+(!v?' active-motor':''); }
@@ -9161,121 +9145,7 @@ document.addEventListener('keydown',e=>{
 
 // ── GUIDES & BACKUP ───────────────────────────────────────
 function loadGuidePage(){
-  renderGuide();
   loadBackupStatus();
-}
-
-function renderGuide(){
-  const el=document.getElementById('guide-rclone');
-  if(!el) return;
-  el.innerHTML=`
-<style>
-  .guide-h2{font-family:var(--font-head);font-size:17px;font-weight:800;color:var(--accent);margin:20px 0 8px;padding-bottom:4px;border-bottom:1px solid var(--sky-border);}
-  .guide-h3{font-family:var(--font-head);font-size:14px;font-weight:700;color:var(--text);margin:14px 0 6px;}
-  .guide-code{background:var(--sky-deep);border:1px solid var(--sky-border2);border-radius:var(--radius);padding:10px 14px;font-family:monospace;font-size:13px;color:var(--accent3);white-space:pre-wrap;margin:6px 0 10px;overflow-x:auto;position:relative;}
-  .guide-copy{position:absolute;top:6px;right:8px;background:rgba(77,166,255,0.15);border:1px solid rgba(77,166,255,0.3);color:var(--accent);border-radius:4px;padding:2px 8px;cursor:pointer;font-size:11px;font-family:var(--font-head);font-weight:700;}
-  .guide-note{background:rgba(255,209,102,0.1);border-left:3px solid var(--gold);padding:8px 12px;border-radius:0 6px 6px 0;font-size:13px;margin:8px 0;}
-  .guide-ok{background:rgba(6,214,160,0.08);border-left:3px solid var(--accent3);padding:8px 12px;border-radius:0 6px 6px 0;font-size:13px;margin:8px 0;}
-  .guide-p{margin:6px 0;font-size:14px;}
-</style>
-
-<div class="guide-p">Rclone synchronisiert den <code>data/</code>-Ordner automatisch in die Cloud. Einmalige Einrichtung, danach vollautomatisch im Hintergrund.</div>
-
-<div class="guide-h2">Schritt 1 — Rclone installieren</div>
-<div class="guide-h3">Linux (Ubuntu/Debian):</div>
-<div class="guide-code">sudo apt update && sudo apt install rclone
-<span class="guide-copy" onclick="navigator.clipboard.writeText('sudo apt update && sudo apt install rclone')">📋</span></div>
-
-<div class="guide-h3">Oder aktuellste Version direkt:</div>
-<div class="guide-code">curl https://rclone.org/install.sh | sudo bash
-<span class="guide-copy" onclick="navigator.clipboard.writeText('curl https://rclone.org/install.sh | sudo bash')">📋</span></div>
-
-<div class="guide-h2">Schritt 2 — Cloud-Anbieter einrichten</div>
-<div class="guide-p">Rclone interaktiv konfigurieren:</div>
-<div class="guide-code">rclone config
-<span class="guide-copy" onclick="navigator.clipboard.writeText('rclone config')">📋</span></div>
-
-<div class="guide-p">Im Menü:</div>
-<div class="guide-code">n  ← Neue Konfiguration
-Name: modellflug-backup
-Anbieter wählen:
-  drive   → Google Drive
-  onedrive→ Microsoft OneDrive
-  dropbox → Dropbox
-  b2      → Backblaze B2 (günstigste Option)
-  s3      → Amazon S3 / Kompatible</div>
-
-<div class="guide-note">💡 <strong>Google Drive:</strong> Beim ersten Setup öffnet sich ein Browser-Fenster für OAuth — am besten direkt auf dem Server mit Desktop oder via SSH-Tunnel einrichten.</div>
-
-<div class="guide-h3">Ohne Browser (Server-Setup):</div>
-<div class="guide-code">rclone config  ← auf dem Server starten, "n" wählen
-# Am Ende: "Use auto config? n"
-# Dann den angezeigten Link auf einem lokalen Gerät öffnen
-# Auth-Code zurück in die Konsole eingeben</div>
-
-<div class="guide-h2">Schritt 3 — Verbindung testen</div>
-<div class="guide-code">rclone lsd modellflug-backup:
-<span class="guide-copy" onclick="navigator.clipboard.writeText('rclone lsd modellflug-backup:')">📋</span></div>
-<div class="guide-ok">✓ Zeigt Ordner im Cloud-Speicher → Verbindung funktioniert</div>
-
-<div class="guide-h2">Schritt 4 — In der App aktivieren</div>
-<div class="guide-p">Per Umgebungsvariable beim Start:</div>
-<div class="guide-code">RCLONE_REMOTE=modellflug-backup RCLONE_PATH=modellflug/ BACKUP_KEEP=14 node server.js
-<span class="guide-copy" onclick="navigator.clipboard.writeText('RCLONE_REMOTE=modellflug-backup RCLONE_PATH=modellflug/ BACKUP_KEEP=14 node server.js')">📋</span></div>
-
-<div class="guide-h3">Oder in systemd (/etc/systemd/system/modellflug.service):</div>
-<div class="guide-code">[Service]
-Environment=RCLONE_REMOTE=modellflug-backup
-Environment=RCLONE_PATH=modellflug/
-Environment=BACKUP_KEEP=14
-ExecStart=/usr/bin/node /opt/modellflug/server.js
-<span class="guide-copy" onclick="navigator.clipboard.writeText('[Service]\nEnvironment=RCLONE_REMOTE=modellflug-backup\nEnvironment=RCLONE_PATH=modellflug/\nEnvironment=BACKUP_KEEP=14\nExecStart=/usr/bin/node /opt/modellflug/server.js')">📋</span></div>
-
-<div class="guide-note">⚙️ <strong>RCLONE_REMOTE</strong> = Name den du in <code>rclone config</code> vergeben hast<br>
-<strong>RCLONE_PATH</strong> = Pfad im Cloud-Speicher (wird automatisch erstellt)<br>
-<strong>BACKUP_KEEP</strong> = Anzahl der aufzubewahrenden Backups (Standard: 14). Ältere werden automatisch gelöscht.</div>
-
-<div class="guide-h2">Was wird gesichert?</div>
-<div class="guide-p">Alle 5 Minuten (wenn Daten geändert wurden) wird eine ZIP in die Cloud hochgeladen:</div>
-<div class="guide-code">aeroscore-export-2026-05-14T15-30-00.zip
-├── backup-info.json        ← Metadaten (Datum, Anzahl)
-├── data/
-│   ├── wettbewerb.json     ← Alle Wettbewerbe, Teilnehmer, Einträge
-│   ├── users.json          ← Benutzer (bcrypt-Hashes, sicher)
-│   └── config.json         ← App-Einstellungen
-└── exports/
-    ├── Vereinsmeisterschaft-2025.json
-    └── ...                 ← Je ein Export pro Wettbewerb</div>
-
-<div class="guide-h2">Aufbewahrung &amp; Rotation</div>
-<div class="guide-p">Nach jedem Upload werden automatisch alte Backups gelöscht wenn mehr als <code>BACKUP_KEEP</code> vorhanden sind:</div>
-<div class="guide-code"># Beispiele:
-BACKUP_KEEP=14   → ~70 Min. Verlauf (Standard)
-BACKUP_KEEP=100  → ~8 Stunden
-BACKUP_KEEP=288  → 24 Stunden</div>
-
-<div class="guide-ok">✓ Backup läuft vollautomatisch — kein Eingriff nötig<br>
-✓ Jedes Backup ist eine vollständige ZIP (kein Diff)<br>
-✓ Alte Backups werden automatisch gelöscht<br>
-✓ Einzelne Wettbewerbe aus <code>exports/</code> über den Import-Wizard einspielen</div>
-
-<div class="guide-h2">Backup deaktivieren</div>
-<div class="guide-p">Um die automatische Cloud-Sicherung zu stoppen, die Umgebungsvariable beim Start einfach weglassen:</div>
-<div class="guide-code">node server.js
-<span class="guide-copy" onclick="navigator.clipboard.writeText('node server.js')">📋</span></div>
-<div class="guide-p">Bei systemd die Zeilen aus der Service-Datei entfernen und neu laden:</div>
-<div class="guide-code"># Environment=RCLONE_REMOTE=...  ← diese Zeilen löschen
-# Environment=RCLONE_PATH=...
-# Environment=BACKUP_KEEP=...
-
-sudo systemctl daemon-reload
-sudo systemctl restart modellflug
-<span class="guide-copy" onclick="navigator.clipboard.writeText('sudo systemctl daemon-reload\nsudo systemctl restart modellflug')">📋</span></div>
-<div class="guide-p">Die bereits hochgeladenen Backups in der Cloud bleiben erhalten und können manuell gelöscht werden:</div>
-<div class="guide-code">rclone delete modellflug-backup:modellflug/
-<span class="guide-copy" onclick="navigator.clipboard.writeText('rclone delete modellflug-backup:modellflug/')">📋</span></div>
-<div class="guide-note">💡 Die rclone-Konfiguration selbst bleibt auf dem Server gespeichert. Um sie vollständig zu entfernen:<br><code>rclone config delete modellflug-backup</code></div>
-  `;
 }
 
 async function loadBackupStatus(){

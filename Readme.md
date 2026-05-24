@@ -385,13 +385,27 @@ Verbindung testen:
 rclone lsd aeroscore-backup:
 ```
 
-### Schritt 3 — Umgebungsvariablen in der systemd-Service-Datei setzen
+### Schritt 3 — rclone-Config für den Dienst-Benutzer zugänglich machen
+
+Die rclone-Konfiguration (`rclone.conf`) liegt im Home-Verzeichnis des Benutzers, der `rclone config` ausgeführt hat. Da der systemd-Dienst als `nobody` läuft, muss die Datei für diesen Benutzer lesbar sein:
+
+```bash
+# Pfad zur Config-Datei ermitteln
+rclone config file
+
+# Config und übergeordnete Verzeichnisse lesbar machen
+chmod 644 ~/.config/rclone/rclone.conf
+chmod 755 ~/.config/rclone/
+chmod 755 ~
+```
+
+### Schritt 4 — Umgebungsvariablen in der systemd-Service-Datei setzen
 
 ```bash
 sudo nano /etc/systemd/system/aeroscore.service
 ```
 
-Im Abschnitt `[Service]` ergänzen:
+Im Abschnitt `[Service]` ergänzen — dabei `RCLONE_CONFIG` auf den vollständigen Pfad der gerade ermittelten Config-Datei setzen:
 
 ```ini
 [Service]
@@ -401,15 +415,18 @@ Restart=always
 RestartSec=5
 User=nobody
 Group=nogroup
+Environment=RCLONE_CONFIG=/home/<deinUser>/.config/rclone/rclone.conf
 Environment=RCLONE_REMOTE=aeroscore-backup
 Environment=RCLONE_PATH=aeroscore/
 Environment=BACKUP_KEEP=14
 Environment=FORCE_HTTPS=true
 ```
 
+> **Wichtig:** Ohne `RCLONE_CONFIG` schlägt das Backup mit `didn't find section in config file` fehl, weil der `nobody`-Prozess das Home-Verzeichnis des einrichtenden Benutzers nicht automatisch findet.
+
 `RCLONE_PATH` ist der Ordner im Cloud-Speicher. `BACKUP_KEEP=14` bedeutet, dass maximal 14 ZIP-Dateien aufbewahrt werden; ältere werden automatisch gelöscht.
 
-### Schritt 4 — Dienst neu laden
+### Schritt 5 — Dienst neu laden
 
 ```bash
 sudo systemctl daemon-reload
