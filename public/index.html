@@ -490,6 +490,11 @@
   }
   .participant-name { flex: 1; font-weight: 500; min-width: 100px; font-size: 15px; }
   .participant-badges { display: flex; gap: 5px; flex-wrap: wrap; }
+  .drag-handle { cursor: grab; color: var(--text-muted); font-size: 18px; opacity: 0.45; user-select: none; flex-shrink: 0; line-height: 1; }
+  .drag-handle:active { cursor: grabbing; }
+  .participant-row.p-dragging { opacity: 0.35; }
+  .participant-row.p-drag-over-top { border-top: 2px solid var(--primary); margin-top: -1px; }
+  .participant-row.p-drag-over-bottom { border-bottom: 2px solid var(--primary); margin-bottom: -1px; }
 
   /* SETTINGS SLIDERS */
   .weight-row {
@@ -3015,6 +3020,7 @@ let timerSeconds=0, timerRunning=false, timerInterval=null;
 let currentView='all', currentUser=null;
 let currentDetailPilotId=null;
 let pendingShareFile=null;
+let _dragPid=null;
 
 // ======================== OFFLINE QUEUE ========================
 let offlineQueue=[];
@@ -3999,9 +4005,10 @@ function importWizParticipants(input){
       const data=JSON.parse(ev.target.result);
       const list=data.participants||data;
       if(!Array.isArray(list)||!list.length){toast('Keine Teilnehmer in der Datei.',true);return;}
+      const sorted=[...list].sort((a,b)=>(parseInt(a.number)||0)-(parseInt(b.number)||0));
       const existing=wizParticipants.map(p=>p.name.toLowerCase());
       let added=0;
-      for(const p of list){
+      for(const p of sorted){
         if(!p.name||existing.includes(p.name.toLowerCase())) continue;
         wizParticipants.push({name:p.name,planeType:p.planeType||'sail',youth:!!p.youth});
         existing.push(p.name.toLowerCase()); added++;
@@ -4836,8 +4843,10 @@ function renderParticipants(){
     if(allCb&&anySelected&&!allSelected) allCb.indeterminate=true;
     return;
   }
+  const canDrag=!hasEntries&&!!currentUser;
   el.innerHTML=sorted.map(p=>`
-    <div class="participant-row" style="${p.lost?'opacity:0.6;':''}${p._offline?'opacity:0.7;':''}">
+    <div class="participant-row" data-pid="${p.id}" ${canDrag?'draggable="true"':''} style="${p.lost?'opacity:0.6;':''}${p._offline?'opacity:0.7;':''}">
+      ${canDrag?'<span class="drag-handle" title="Ziehen zum Verschieben">⠿</span>':''}
       <div style="font-family:var(--font-head);font-size:16px;font-weight:700;color:var(--text-muted);min-width:36px;">${p.number||'—'}</div>
       <div class="participant-name">${esc(p.name)}${p._offline?'<span class="entry-offline-badge" style="margin-left:6px;">⏳</span>':''}</div>
       <div class="participant-badges">
@@ -4850,6 +4859,67 @@ function renderParticipants(){
       <button class="btn btn-danger btn-sm admin-only-btn" onclick="removeParticipant(${p.id})">✕</button>
     </div>`).join('');
   document.querySelectorAll('.admin-only-btn').forEach(b=>b.style.display=currentUser?'':'none');
+  if(canDrag) initParticipantDrag();
+}
+
+function initParticipantDrag(){
+  const container=document.getElementById('participant-list');
+  if(!container) return;
+  const rows=container.querySelectorAll('[data-pid]');
+  rows.forEach(row=>{
+    row.addEventListener('dragstart',e=>{
+      _dragPid=parseInt(row.dataset.pid);
+      row.classList.add('p-dragging');
+      e.dataTransfer.effectAllowed='move';
+    });
+    row.addEventListener('dragend',()=>{
+      row.classList.remove('p-dragging');
+      container.querySelectorAll('.p-drag-over-top,.p-drag-over-bottom')
+        .forEach(r=>r.classList.remove('p-drag-over-top','p-drag-over-bottom'));
+    });
+    row.addEventListener('dragover',e=>{
+      e.preventDefault();
+      if(parseInt(row.dataset.pid)===_dragPid) return;
+      container.querySelectorAll('.p-drag-over-top,.p-drag-over-bottom')
+        .forEach(r=>r.classList.remove('p-drag-over-top','p-drag-over-bottom'));
+      const rect=row.getBoundingClientRect();
+      if(e.clientY<rect.top+rect.height/2) row.classList.add('p-drag-over-top');
+      else row.classList.add('p-drag-over-bottom');
+    });
+    row.addEventListener('dragleave',e=>{
+      if(!row.contains(e.relatedTarget))
+        row.classList.remove('p-drag-over-top','p-drag-over-bottom');
+    });
+    row.addEventListener('drop',async e=>{
+      e.preventDefault();
+      row.classList.remove('p-drag-over-top','p-drag-over-bottom');
+      const targetId=parseInt(row.dataset.pid);
+      if(_dragPid==null||targetId===_dragPid) return;
+      const insertBefore=e.clientY<row.getBoundingClientRect().top+row.getBoundingClientRect().height/2;
+      const sorted=[...participants].sort((a,b)=>(parseInt(a.number)||0)-(parseInt(b.number)||0));
+      const srcIdx=sorted.findIndex(p=>p.id===_dragPid);
+      const tgtIdx=sorted.findIndex(p=>p.id===targetId);
+      if(srcIdx===-1||tgtIdx===-1) return;
+      const [moved]=sorted.splice(srcIdx,1);
+      let adjustedTgt=srcIdx<tgtIdx?tgtIdx-1:tgtIdx;
+      sorted.splice(insertBefore?adjustedTgt:adjustedTgt+1,0,moved);
+      // Collect only changed numbers
+      const updates=[];
+      sorted.forEach((p,i)=>{const n=i+1;if(p.number!==n)updates.push({p,n});});
+      // Optimistic update
+      sorted.forEach((p,i)=>{p.number=i+1;});
+      participants=sorted;
+      renderParticipants();
+      populatePilotSelect();
+      if(!updates.length) return;
+      try{
+        await Promise.all(updates.map(({p,n})=>api('PUT','/contests/'+currentContestId+'/participants/'+p.id,{number:n})));
+      }catch(err){
+        toast('Fehler beim Speichern der Reihenfolge.',true);
+        await loadContest(currentContestId);
+      }
+    });
+  });
 }
 
 function toggleBulkDeleteMode(){
@@ -7573,7 +7643,7 @@ async function importParticipants(input){
     const list=data.participants||data; // support both {participants:[]} and []
     if(!Array.isArray(list)||!list.length){toast('Keine Teilnehmer in der Datei.',true);return;}
     const existing=participants.map(p=>p.name.toLowerCase());
-    const toImport=list.filter(p=>p.name&&!existing.includes(p.name.toLowerCase()));
+    const toImport=list.filter(p=>p.name&&!existing.includes(p.name.toLowerCase())).sort((a,b)=>(parseInt(a.number)||0)-(parseInt(b.number)||0));
     if(!toImport.length){toast('Alle Teilnehmer bereits vorhanden.',true);return;}
     confirmAction(
       'Teilnehmer importieren',
