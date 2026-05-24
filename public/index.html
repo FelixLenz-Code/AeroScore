@@ -1083,6 +1083,8 @@
     backdrop-filter: blur(6px);
   }
   #confirm-overlay.hidden { display: none; }
+  #prompt-overlay { position:fixed;inset:0;z-index:1300;background:rgba(5,14,28,0.92);display:flex;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(6px); }
+  #prompt-overlay.hidden { display:none; }
   .confirm-box {
     background: var(--sky-card);
     border: 1px solid rgba(239,71,111,0.4);
@@ -1251,6 +1253,19 @@
     <div class="confirm-btns">
       <button class="btn btn-ghost" onclick="confirmCancel()">Abbrechen</button>
       <button class="btn btn-danger" id="confirm-ok-btn" onclick="confirmOk()">Bestätigen</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── PROMPT (Text-Input-Dialog) ─────────────────────────── -->
+<div id="prompt-overlay" class="hidden">
+  <div class="confirm-box" style="text-align:left;">
+    <h3 id="prompt-title" style="font-family:var(--font-head);font-size:18px;font-weight:800;margin-bottom:14px;color:var(--text);">Umbenennen</h3>
+    <input type="text" id="prompt-input" style="width:100%;margin-bottom:16px;box-sizing:border-box;"
+      onkeydown="if(event.key==='Enter')promptOk();if(event.key==='Escape')promptCancel();">
+    <div class="confirm-btns">
+      <button class="btn btn-ghost" onclick="promptCancel()">Abbrechen</button>
+      <button class="btn btn-primary" onclick="promptOk()">Speichern</button>
     </div>
   </div>
 </div>
@@ -3932,7 +3947,8 @@ function renderWizClubList(){
   const html=wizClubs.length
     ? wizClubs.map((name,i)=>`
     <div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--sky-border);">
-      <input value="${esc(name)}" style="flex:1;font-size:13px;background:var(--sky-mid);border:1px solid var(--sky-border2);border-radius:var(--radius);padding:4px 8px;color:var(--text);outline:none;" onblur="renameWizClub(${i},this.value)" onkeydown="if(event.key==='Enter')this.blur()">
+      <span style="flex:1;font-size:13px;color:var(--text);">${esc(name)}</span>
+      <button class="btn btn-ghost btn-sm" onclick="openRenameWizClub(${i})">✎</button>
       <button class="btn btn-ghost btn-sm" onclick="removeWizClub(${i})" style="color:var(--accent-red);">✕</button>
     </div>`).join('')
     : '<div style="font-size:12px;color:var(--text-dim);padding:4px 0;">Noch keine Vereine.</div>';
@@ -3940,12 +3956,13 @@ function renderWizClubList(){
     const el=document.getElementById(id); if(el) el.innerHTML=html;
   });
 }
+function openRenameWizClub(idx){ promptAction('Verein umbenennen',wizClubs[idx]||'',val=>renameWizClub(idx,val)); }
 function renameWizClub(idx,val){
   val=(val||'').trim();
   if(!val){toast('Name darf nicht leer sein!',true);renderWizClubList();updateWizPClubSelect();return;}
   if(wizClubs.indexOf(val)!==-1&&wizClubs.indexOf(val)!==idx){toast('Verein bereits vorhanden!',true);renderWizClubList();updateWizPClubSelect();return;}
   wizClubs[idx]=val;
-  updateWizPClubSelect();
+  renderWizClubList(); updateWizPClubSelect();
 }
 function addWizFFClub(){
   const inp=document.getElementById('wiz-ff-club-input');
@@ -4442,6 +4459,24 @@ function confirmAction(title,msg,cb,okLabel){
 function confirmOk(){ document.getElementById('confirm-overlay').classList.add('hidden'); if(_cb){_cb();_cb=null;} }
 function confirmCancel(){ document.getElementById('confirm-overlay').classList.add('hidden'); _cb=null; }
 
+let _promptCb=null;
+function promptAction(title,currentVal,cb){
+  document.getElementById('prompt-title').textContent=title;
+  document.getElementById('prompt-input').value=currentVal;
+  _promptCb=cb;
+  document.getElementById('prompt-overlay').classList.remove('hidden');
+  setTimeout(()=>{const el=document.getElementById('prompt-input');el.focus();el.select();},50);
+}
+function promptOk(){
+  const val=(document.getElementById('prompt-input').value||'').trim();
+  document.getElementById('prompt-overlay').classList.add('hidden');
+  if(_promptCb){_promptCb(val);_promptCb=null;}
+}
+function promptCancel(){
+  document.getElementById('prompt-overlay').classList.add('hidden');
+  _promptCb=null;
+}
+
 // ======================== DRAWER ========================
 function toggleDrawer(){ document.getElementById('nav-drawer').classList.toggle('open'); }
 function closeDrawer(){ document.getElementById('nav-drawer').classList.remove('open'); }
@@ -4452,7 +4487,7 @@ document.addEventListener('click',e=>{
   const drawer=document.getElementById('nav-drawer'), hb=document.getElementById('nav-hamburger');
   if(drawer.classList.contains('open')&&!drawer.contains(e.target)&&!hb.contains(e.target)) closeDrawer();
   // wizard-overlay excluded intentionally — must use Abbrechen button
-  ['pilot-detail-overlay','login-overlay','confirm-overlay','edit-p-overlay','edit-overlay','duplicate-overlay'].forEach(id=>{
+  ['pilot-detail-overlay','login-overlay','confirm-overlay','prompt-overlay','edit-p-overlay','edit-overlay','duplicate-overlay'].forEach(id=>{
     const el=document.getElementById(id);
     if(el&&!el.classList.contains('hidden')&&e.target===el) el.classList.add('hidden');
   });
@@ -7734,6 +7769,7 @@ async function adminResetAll(){
 let csDropWorst=false,csDropWorstLimbo=false,csDropWorstBallon=false,csStatus='active';
 let _csFullContest=null, _csOriginalDisciplines=[];
 let csClubsEnabled=false, csClubs=[], csClubAverage=false;
+let _csClubRenameMap={}; // oldName → newName, tracked during editing
 function setCSClubsEnabled(v){
   csClubsEnabled=v;
   const on=document.getElementById('cs-clubs-on'),off=document.getElementById('cs-clubs-off');
@@ -7764,15 +7800,24 @@ function renderCSClubList(){
   if(!csClubs.length){el.innerHTML='<div style="font-size:12px;color:var(--text-dim);padding:4px 0;">Noch keine Vereine.</div>';return;}
   el.innerHTML=csClubs.map((name,i)=>`
     <div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--sky-border);">
-      <input value="${esc(name)}" style="flex:1;font-size:13px;background:var(--sky-mid);border:1px solid var(--sky-border2);border-radius:var(--radius);padding:4px 8px;color:var(--text);outline:none;" onblur="renameCSClub(${i},this.value)" onkeydown="if(event.key==='Enter')this.blur()">
+      <span style="flex:1;font-size:13px;color:var(--text);">${esc(name)}</span>
+      <button class="btn btn-ghost btn-sm" onclick="openRenameCSClub(${i})">✎</button>
       <button class="btn btn-ghost btn-sm" onclick="removeCSClub(${i})" style="color:var(--accent-red);">✕</button>
     </div>`).join('');
 }
+function openRenameCSClub(idx){ promptAction('Verein umbenennen',csClubs[idx]||'',val=>renameCSClub(idx,val)); }
 function renameCSClub(idx,val){
   val=(val||'').trim();
   if(!val){toast('Name darf nicht leer sein!',true);renderCSClubList();return;}
   if(csClubs.indexOf(val)!==-1&&csClubs.indexOf(val)!==idx){toast('Verein bereits vorhanden!',true);renderCSClubList();return;}
+  const oldName=csClubs[idx];
+  if(oldName!==val){
+    // Find original name (in case this club was already renamed once)
+    const origName=Object.keys(_csClubRenameMap).find(k=>_csClubRenameMap[k]===oldName)||oldName;
+    _csClubRenameMap[origName]=val;
+  }
   csClubs[idx]=val;
+  renderCSClubList();
 }
 function setCSStatus(s){ csStatus=s; ['active','finished','archived'].forEach(st=>{ const el=document.getElementById('cs-st-'+st); if(el) el.className='toggle-opt'+(st===s?' active-motor':''); }); }
 function setCSDropWorst(v){ csDropWorst=v; document.getElementById('cs-drop-on').className='toggle-opt'+(v?' active-motor':''); document.getElementById('cs-drop-off').className='toggle-opt'+(!v?' active-motor':''); }
@@ -7868,7 +7913,7 @@ async function openContestSettings(id){
     const csGRSec=document.getElementById('cs-gluecksrad-section');
     if(csGRSec) csGRSec.style.display=hasGR?'block':'none';
     // Clubs section
-    csClubs=[...(s.clubs||[])]; csClubAverage=!!s.clubAverage;
+    csClubs=[...(s.clubs||[])]; csClubAverage=!!s.clubAverage; _csClubRenameMap={};
     setCSClubsEnabled(!!s.clubsEnabled);
     setCSClubAverage(csClubAverage);
     renderCSClubList();
@@ -8105,6 +8150,17 @@ async function saveContestSettings(){
     if(_vp.trim()!=='') _putBody.viewerPassword=_vp.trim(); // set new password
     else if(_vp===' ') _putBody.viewerPassword=''; // explicit remove via badge button
     await api('PUT','/contests/'+id,_putBody);
+    // Propagate club renames to existing participants
+    const renames=_csClubRenameMap;
+    if(Object.keys(renames).length>0){
+      const allPs=(_csFullContest?.participants||participants).filter(p=>p.club&&renames[p.club]);
+      if(allPs.length>0){
+        await Promise.all(allPs.map(p=>
+          api('PUT','/contests/'+id+'/participants/'+p.id,{name:p.name,number:p.number,youth:!!p.youth,planeType:p.planeType||'sail',lost:!!p.lost,club:renames[p.club]})
+        ));
+      }
+    }
+    _csClubRenameMap={};
     closeContestSettings();
     if(!navigator.onLine){
       // Local state already updated in offlineQueueMutation — skip server reload

@@ -173,7 +173,7 @@ cd /opt/modellflug
 ### Schritt 3 — Abhängigkeiten installieren
 
 ```bash
-npm install
+sudo npm install
 ```
 
 Das lädt alle benötigten Pakete herunter und legt den Ordner `node_modules/` an. Eine Internetverbindung ist dafür einmalig erforderlich. Der Vorgang dauert typischerweise 20–60 Sekunden.
@@ -183,7 +183,7 @@ Das lädt alle benötigten Pakete herunter und legt den Ordner `node_modules/` a
 ### Schritt 4 — Server starten
 
 ```bash
-npm start
+sudo npm start
 ```
 
 Die Ausgabe sollte so aussehen:
@@ -455,7 +455,7 @@ Voraussetzung: rclone ist auf dem neuen Server eingerichtet und hat Zugriff auf 
 rclone sync aeroscore-backup:aeroscore/ /opt/modellflug/data/
 
 # Server starten — kein Setup nötig, alle Daten sind bereits vorhanden
-npm start
+sudo npm start
 ```
 
 ### Option C — Manueller ZIP-Download (aus dem Admin-Bereich)
@@ -479,7 +479,7 @@ Der Server wird ausschließlich über Umgebungsvariablen konfiguriert. Es gibt k
 **Beispiel — manueller Start mit allen Optionen:**
 
 ```bash
-PORT=3000 FORCE_HTTPS=true RCLONE_REMOTE=aeroscore-backup RCLONE_PATH=aeroscore/ BACKUP_KEEP=30 npm start
+sudo PORT=3000 FORCE_HTTPS=true RCLONE_REMOTE=aeroscore-backup RCLONE_PATH=aeroscore/ BACKUP_KEEP=30 npm start
 ```
 
 ---
