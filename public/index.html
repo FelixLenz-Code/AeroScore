@@ -1409,7 +1409,9 @@
           <option value="hit1">1. Versuch getroffen (+100)</option>
           <option value="hit2">2. Versuch getroffen (+50)</option>
           <option value="hit3">3. Versuch getroffen (±0)</option>
-          <option value="miss">Nicht getroffen (−100)</option>
+          <option value="miss">Kein Treffer, 3 Anflüge (−150)</option>
+          <option value="landed1">Vorzeitig gelandet nach 1. Anflug (−100)</option>
+          <option value="landed2">Vorzeitig gelandet nach 2. Anflug (−150)</option>
         </select>
       </div>
       <div id="edit-ff-wheel-section">
@@ -1832,17 +1834,18 @@
             <strong style="color:var(--text);">Ablauf eines Durchgangs</strong><br>
             <span style="color:var(--accent3);font-weight:700;">1.</span> <strong>Le-Mans-Start</strong> — auf Kommando läuft ein Pilot zu seinem Modell und startet so schnell wie möglich.<br>
             <span style="color:var(--accent3);font-weight:700;">2.</span> <strong>4 Loopings</strong> — abwechselnd rechts und links, jeweils auf einem Bein stehend ausgeführt, in der vorgegebenen Reihenfolge. Jeder korrekte Looping bringt Punkte, jeder fehlerhafte oder ausgelassene kostet Punkte.<br>
-            <span style="color:var(--accent3);font-weight:700;">3.</span> <strong>Ballonphase</strong> — bis zu 3 Anflüge auf den aufgehängten Ballon. Je früher der Treffer, desto mehr Punkte. Ein Berühren der Stange gilt als Treffer.<br>
+            <span style="color:var(--accent3);font-weight:700;">3.</span> <strong>Ballonphase</strong> — bis zu 3 Anflüge auf den aufgehängten Ballon. Je früher der Treffer, desto mehr Punkte. Ein Berühren der Stange gilt als Treffer. Jeder Fehlversuch oder nicht angetretene Anflug kostet −50 Pkt.<br>
             <span style="color:var(--accent3);font-weight:700;">4.</span> <strong>Zeit-Stopp</strong> — nach der Ballonphase gibt der Pilot den Wollfaden ab; damit wird die Flugzeit gestoppt.<br>
             <span style="color:var(--accent3);font-weight:700;">5.</span> <strong>Glücksrad</strong> — am Ende dreht jeder Pilot einmal das Rad. Die gezogene Zahl × 10 wird zum Ergebnis addiert.<br><br>
             <strong style="color:var(--text);">Punkteberechnung</strong><br>
             <span style="display:inline-block;min-width:140px;">400 Vorgabepunkte</span> Startguthaben für jeden Piloten<br>
             <span style="display:inline-block;min-width:140px;color:#06d6a0;">+50 Pkt</span> pro korrektem Looping (Richtung eingehalten)<br>
             <span style="display:inline-block;min-width:140px;color:var(--accent-red);">−50 Pkt</span> pro fehlerhaftem Looping (falsche Richtung oder ausgelassen)<br>
-            <span style="display:inline-block;min-width:140px;color:#06d6a0;">+100 Pkt</span> Ballon beim 1. Anflug getroffen<br>
-            <span style="display:inline-block;min-width:140px;color:#06d6a0;">+50 Pkt</span> Ballon beim 2. Anflug getroffen<br>
-            <span style="display:inline-block;min-width:140px;">±0 Pkt</span> Ballon beim 3. Anflug getroffen (Stange gilt)<br>
-            <span style="display:inline-block;min-width:140px;color:var(--accent-red);">−50 Pkt</span> je Fehlversuch beim 1. und 2. Anflug<br>
+            <span style="display:inline-block;min-width:140px;color:#06d6a0;">+100 Pkt</span> 1. Anflug getroffen<br>
+            <span style="display:inline-block;min-width:140px;color:#06d6a0;">+50 Pkt</span> 2. Anflug getroffen (−50 +100)<br>
+            <span style="display:inline-block;min-width:140px;">±0 Pkt</span> 3. Anflug getroffen (Stange gilt, −50 −50 +100)<br>
+            <span style="display:inline-block;min-width:140px;color:var(--accent-red);">−100 Pkt</span> Vorzeitig gelandet nach 1. Anflug (−50 −50)<br>
+            <span style="display:inline-block;min-width:140px;color:var(--accent-red);">−150 Pkt</span> Kein Treffer oder vorzeitig nach 2. Anflug (3× −50)<br>
             <span style="display:inline-block;min-width:140px;color:var(--accent-red);">−1 Pkt / Sek.</span> gesamte Flugzeit bis Zeit-Stopp<br>
             <span style="display:inline-block;min-width:140px;color:#06d6a0;">+ Rad-Wert × 10</span> Glücksrad-Bonus am Ende<br><br>
             <strong style="color:var(--text);">Vereinswertung</strong><br>
@@ -2282,23 +2285,37 @@
         <button class="ff-balloon-opt" id="ff-bal-hit2" onclick="setFFBalloon('hit2')">
           <div style="flex:1;">
             <div style="font-weight:700;font-size:14px;">2. Anflug: getroffen</div>
-            <div style="font-size:12px;color:var(--text-muted);">1 Anflug verfehlt (−50)</div>
+            <div style="font-size:12px;color:var(--text-muted);">1 Anflug verfehlt (−50 +100 = +50)</div>
           </div>
           <div class="ff-bal-pts">+50</div>
         </button>
         <button class="ff-balloon-opt" id="ff-bal-hit3" onclick="setFFBalloon('hit3')">
           <div style="flex:1;">
             <div style="font-weight:700;font-size:14px;">3. Anflug: getroffen</div>
-            <div style="font-size:12px;color:var(--text-muted);">2 Anflüge verfehlt (−100)</div>
+            <div style="font-size:12px;color:var(--text-muted);">2 Anflüge verfehlt (−50 −50 +100 = 0)</div>
           </div>
           <div class="ff-bal-pts" style="color:var(--text-muted);">±0</div>
         </button>
         <button class="ff-balloon-opt" id="ff-bal-miss" onclick="setFFBalloon('miss')">
           <div style="flex:1;">
             <div style="font-weight:700;font-size:14px;">Kein Treffer</div>
-            <div style="font-size:12px;color:var(--text-muted);">3 Anflüge, kein Ballon (−100)</div>
+            <div style="font-size:12px;color:var(--text-muted);">3 Anflüge verfehlt (−50 −50 −50 = −150)</div>
+          </div>
+          <div class="ff-bal-pts" style="color:var(--accent-red);">−150</div>
+        </button>
+        <button class="ff-balloon-opt" id="ff-bal-landed1" onclick="setFFBalloon('landed1')">
+          <div style="flex:1;">
+            <div style="font-weight:700;font-size:14px;">Vorzeitig gelandet nach 1. Anflug</div>
+            <div style="font-size:12px;color:var(--text-muted);">1 Fehlversuch + Landung (−50 −50 = −100)</div>
           </div>
           <div class="ff-bal-pts" style="color:var(--accent-red);">−100</div>
+        </button>
+        <button class="ff-balloon-opt" id="ff-bal-landed2" onclick="setFFBalloon('landed2')">
+          <div style="flex:1;">
+            <div style="font-weight:700;font-size:14px;">Vorzeitig gelandet nach 2. Anflug</div>
+            <div style="font-size:12px;color:var(--text-muted);">2 Fehlversuche + Landung (−50 −50 −50 = −150)</div>
+          </div>
+          <div class="ff-bal-pts" style="color:var(--accent-red);">−150</div>
         </button>
       </div>
     </div>
@@ -5911,7 +5928,7 @@ function renderEntries(){
         const p=participants.find(p=>p.id===e.pilotId);
         const _ob=e._offline?`<span class="entry-offline-badge">⏳ ausstehend</span>`:'';
         const _fs=calcFFFlightScore(e.ffLoopings,e.ffBalloonResult,e.ffTimeSecs)??0;
-        const _bl=e.ffBalloonResult==='hit1'?'1.V.':e.ffBalloonResult==='hit2'?'2.V.':e.ffBalloonResult==='hit3'?'3.V.':e.ffBalloonResult==='miss'?'Kein Treffer':'?';
+        const _bl=e.ffBalloonResult==='hit1'?'1.V.':e.ffBalloonResult==='hit2'?'2.V.':e.ffBalloonResult==='hit3'?'3.V.':e.ffBalloonResult==='miss'?'kein Trff.':e.ffBalloonResult==='landed1'?'vz.1.':e.ffBalloonResult==='landed2'?'vz.2.':'?';
         const _tl=e.ffTimeSecs!=null?` ⏱${formatTime(e.ffTimeSecs)}`:'';
         const _fb='<span class="badge" style="background:rgba(6,214,160,0.12);color:var(--accent3);border:1px solid rgba(6,214,160,0.3);">🤝</span>';
         const _fd=`<span style="font-size:13px;color:var(--text-muted);">${e.ffLoopings??'?'}× 🔄 · ${_bl}${_tl}</span>`;
@@ -6227,7 +6244,7 @@ let ffBalloonSelected  = null;
 function calcFFFlightScore(loopings, balloon, timeSecs){
   if(loopings===null||!balloon) return null;
   const loopScore = loopings * 50 - (4 - loopings) * 50;
-  const balScore  = balloon==='hit1' ? 100 : balloon==='hit2' ? 50 : balloon==='hit3' ? 0 : -100;
+  const balScore  = balloon==='hit1' ? 100 : balloon==='hit2' ? 50 : balloon==='hit3' ? 0 : balloon==='landed1' ? -100 : -150;
   return 400 + loopScore + balScore - (timeSecs||0);
 }
 
@@ -6256,7 +6273,7 @@ function updateFFLoopingButtons(){
 }
 
 function updateFFBalloonButtons(){
-  ['hit1','hit2','hit3','miss'].forEach(v=>{
+  ['hit1','hit2','hit3','miss','landed1','landed2'].forEach(v=>{
     const btn=document.getElementById('ff-bal-'+v);
     if(btn) btn.classList.toggle('selected', v===ffBalloonSelected);
   });
@@ -6273,7 +6290,7 @@ function updateFFPreview(){
   const fEl=document.getElementById('ff-prev-flight');
   if(ffLoopingsSelected!==null){ const ls=ffLoopingsSelected*50-(4-ffLoopingsSelected)*50; if(lEl) lEl.textContent=(ls>=0?'+':'')+ls; }
   else if(lEl) lEl.textContent='—';
-  if(ffBalloonSelected){ const bs=ffBalloonSelected==='hit1'?100:ffBalloonSelected==='hit2'?50:ffBalloonSelected==='hit3'?0:-100; if(bEl) bEl.textContent=(bs>=0?'+':'')+bs; }
+  if(ffBalloonSelected){ const bs=ffBalloonSelected==='hit1'?100:ffBalloonSelected==='hit2'?50:ffBalloonSelected==='hit3'?0:ffBalloonSelected==='landed1'?-100:-150; if(bEl) bEl.textContent=(bs>=0?'+':'')+bs; }
   else if(bEl) bEl.textContent='—';
   if(tEl) tEl.textContent = timeSecs>0 ? '−'+timeSecs : '—';
   if(fEl) fEl.textContent = flightScore!==null ? flightScore+'P' : '—';
@@ -6667,7 +6684,7 @@ function renderLeaderboard(){
       const ffE=entries.find(e=>e.pilotId===row.pilot.id&&e.discipline==='ff');
       if(!ffE) return `<td style="text-align:center;color:var(--text-dim);font-size:12px;">—</td><td style="text-align:center;color:var(--text-dim);font-size:12px;">—</td>`;
       const flightScore=calcFFFlightScore(ffE.ffLoopings,ffE.ffBalloonResult,ffE.ffTimeSecs)??0;
-      const balLabel=ffE.ffBalloonResult==='hit1'?'1. Anflug':ffE.ffBalloonResult==='hit2'?'2. Anflug':ffE.ffBalloonResult==='hit3'?'3. Anflug':'Kein Treffer';
+      const balLabel=ffE.ffBalloonResult==='hit1'?'1. Anflug':ffE.ffBalloonResult==='hit2'?'2. Anflug':ffE.ffBalloonResult==='hit3'?'3. Anflug':ffE.ffBalloonResult==='landed1'?'Vorzeitig (1.)':ffE.ffBalloonResult==='landed2'?'Vorzeitig (2.)':'Kein Treffer';
       const flightCell=`<td style="text-align:center;">
         <span style="font-family:var(--font-head);font-size:16px;font-weight:800;color:var(--accent3);">${flightScore}</span>
         <br><span style="font-size:11px;color:var(--text-muted);">${ffE.ffLoopings??'?'}× · ${balLabel}</span>
@@ -6915,7 +6932,7 @@ function exportLeaderboardPDF(){
       if(!ffE){
         tdDiscs='<td class="num dim">—</td><td class="num dim">—</td>';
       } else {
-        const balLabel=ffE.ffBalloonResult==='hit1'?'1. Anflug':ffE.ffBalloonResult==='hit2'?'2. Anflug':ffE.ffBalloonResult==='hit3'?'3. Anflug':'kein Treffer';
+        const balLabel=ffE.ffBalloonResult==='hit1'?'1. Anflug':ffE.ffBalloonResult==='hit2'?'2. Anflug':ffE.ffBalloonResult==='hit3'?'3. Anflug':ffE.ffBalloonResult==='landed1'?'Vorzeitig (1.)':ffE.ffBalloonResult==='landed2'?'Vorzeitig (2.)':'kein Treffer';
         const timeStr=formatTime(ffE.ffTimeSecs||0);
         const flightCell=`<td class="num">${sc.flightScore}<br><small>${ffE.ffLoopings??'?'}× · ${balLabel} · ⏱${timeStr}</small></td>`;
         const wheelCell=sc.hasWheel
@@ -7198,7 +7215,7 @@ function openPilotDetail(pilotId){
     if(disc==='ff'){
       const ffE=dpe[0];
       const hasWheel=ffE&&ffE.ffWheelResult!==null&&ffE.ffWheelResult!==undefined;
-      const balLabel=ffE?(ffE.ffBalloonResult==='hit1'?'1. Anflug':ffE.ffBalloonResult==='hit2'?'2. Anflug':ffE.ffBalloonResult==='hit3'?'3. Anflug':'Kein Treffer'):'—';
+      const balLabel=ffE?(ffE.ffBalloonResult==='hit1'?'1. Anflug':ffE.ffBalloonResult==='hit2'?'2. Anflug':ffE.ffBalloonResult==='hit3'?'3. Anflug':ffE.ffBalloonResult==='landed1'?'Vorzeitig (1.)':ffE.ffBalloonResult==='landed2'?'Vorzeitig (2.)':'Kein Treffer'):'—';
       const ffFlightScore=ffE?calcFFFlightScore(ffE.ffLoopings,ffE.ffBalloonResult,ffE.ffTimeSecs):null;
       return `<div class="stat-box"><div class="lbl">🤝 FF-Flug</div><div class="val">${ffFlightScore!==null?ffFlightScore:'—'}</div><div style="font-size:11px;color:var(--text-dim);">${ffE?`${ffE.ffLoopings??'?'}× · ${balLabel}`:''}</div></div>`+
         `<div class="stat-box"><div class="lbl">🎡 Rad ×10</div><div class="val">${hasWheel?'+'+ffE.ffWheelResult*10:'ausstehend'}</div><div style="font-size:11px;color:var(--text-dim);">${hasWheel?'Wert: '+ffE.ffWheelResult:''}</div></div>`;
@@ -7249,7 +7266,7 @@ function openPilotDetail(pilotId){
           const isDrop=dropped2&&e.id===dropped2.id;
           let detailLine,subPts;
           if(disc==='ff'){
-            const balLabel=e.ffBalloonResult==='hit1'?'1. Anflug (+100)':e.ffBalloonResult==='hit2'?'2. Anflug (+50)':e.ffBalloonResult==='hit3'?'3. Anflug (±0)':'Kein Treffer (−100)';
+            const balLabel=e.ffBalloonResult==='hit1'?'1. Anflug (+100)':e.ffBalloonResult==='hit2'?'2. Anflug (+50)':e.ffBalloonResult==='hit3'?'3. Anflug (±0)':e.ffBalloonResult==='landed1'?'Vorzeitig n. 1. (−100)':e.ffBalloonResult==='landed2'?'Vorzeitig n. 2. (−150)':'Kein Treffer (−150)';
             const hasWheel=e.ffWheelResult!==null&&e.ffWheelResult!==undefined;
             const flightScore=calcFFFlightScore(e.ffLoopings,e.ffBalloonResult,e.ffTimeSecs);
             runsHtml+=`<div style="font-family:var(--font-head);font-size:13px;font-weight:800;letter-spacing:0.06em;text-transform:uppercase;color:var(--accent3);margin:14px 0 8px;display:flex;justify-content:space-between;align-items:center;">
@@ -7369,7 +7386,7 @@ async function _buildPilotCard(pilotId){
     const ffE=pe.find(e=>e.discipline==='ff');
     const hasWheel=ffE&&ffE.ffWheelResult!==null&&ffE.ffWheelResult!==undefined;
     const flightScore=ffE?calcFFFlightScore(ffE.ffLoopings,ffE.ffBalloonResult,ffE.ffTimeSecs):null;
-    const balLabel=ffE?(ffE.ffBalloonResult==='hit1'?'1. Anflug':ffE.ffBalloonResult==='hit2'?'2. Anflug':ffE.ffBalloonResult==='hit3'?'3. Anflug':'Kein Treffer'):'—';
+    const balLabel=ffE?(ffE.ffBalloonResult==='hit1'?'1. Anflug':ffE.ffBalloonResult==='hit2'?'2. Anflug':ffE.ffBalloonResult==='hit3'?'3. Anflug':ffE.ffBalloonResult==='landed1'?'Vorzeitig (1.)':ffE.ffBalloonResult==='landed2'?'Vorzeitig (2.)':'Kein Treffer'):'—';
     discStats.push({icon:'🤝',label:'FF-Flug',total:flightScore??0,sub:ffE?`${ffE.ffLoopings??'?'}× · ${balLabel}`:'—'});
     discStats.push({icon:'🎡',label:'Rad ×10',total:hasWheel?ffE.ffWheelResult*10:0,sub:hasWheel?'Wert: '+ffE.ffWheelResult:'ausstehend'});
   } else {
@@ -8885,7 +8902,7 @@ function fsRenderLeaderboard(){
       if(!dd||dd.runs===0) return `<td style="text-align:center;width:100px;color:var(--text-dim);font-size:16px;">—</td><td style="text-align:center;width:100px;color:var(--text-dim);font-size:16px;">—</td>`;
       const e=dd.best;
       const flightScore=calcFFFlightScore(e.ffLoopings,e.ffBalloonResult,e.ffTimeSecs)??0;
-      const balShort=e.ffBalloonResult==='hit1'?'1.V.':e.ffBalloonResult==='hit2'?'2.V.':e.ffBalloonResult==='hit3'?'3.V.':'miss';
+      const balShort=e.ffBalloonResult==='hit1'?'1.V.':e.ffBalloonResult==='hit2'?'2.V.':e.ffBalloonResult==='hit3'?'3.V.':e.ffBalloonResult==='landed1'?'vz.1.':e.ffBalloonResult==='landed2'?'vz.2.':'miss';
       const flightCell=`<td style="text-align:center;width:100px;">
         <span style="font-family:var(--font-head);font-size:18px;font-weight:800;color:var(--accent3);">${flightScore}</span>
         <br><span style="font-size:11px;color:var(--text-muted);white-space:nowrap;">${e.ffLoopings??'?'}× · ${balShort} · ⏱${formatTime(e.ffTimeSecs||0)}</span>
